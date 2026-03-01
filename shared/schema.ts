@@ -1,18 +1,47 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
 });
 
+export const players = pgTable("players", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), 
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  photoUrl: text("photo_url"),
+  dateOfBirth: text("date_of_birth").notNull(), 
+  placeOfBirth: text("place_of_birth").notNull(),
+  formerClub: text("former_club").notNull(),
+  position: text("position").notNull(),
+  goalsScored: integer("goals_scored").default(0).notNull(),
+  goalsConceded: integer("goals_conceded").default(0).notNull(),
+  yellowCards: integer("yellow_cards").default(0).notNull(),
+  redCards: integer("red_cards").default(0).notNull(),
+  contractStartDate: text("contract_start_date").notNull(),
+  contractDurationMonths: integer("contract_duration_months").notNull(),
+  contractEndDate: text("contract_end_date").notNull(), 
+  matchesPlayed: integer("matches_played").default(0).notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
+  email: true,
   password: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export const insertPlayerSchema = createInsertSchema(players).omit({
+  id: true,
+  contractEndDate: true,
+  userId: true, // Set by backend automatically based on logged in user
+});
+
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Player = typeof players.$inferSelect;
+export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
+export type UpdatePlayerRequest = Partial<InsertPlayer>;
