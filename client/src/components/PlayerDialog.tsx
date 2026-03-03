@@ -28,6 +28,11 @@ const playerFormSchema = z.object({
   contractStartDate: z.string().min(1, "Date de début requise"),
   contractDurationMonths: z.coerce.number().min(1, "Durée requise"),
   matchesPlayed: z.coerce.number().min(0),
+  salaryBase: z.coerce.number().min(0),
+  salaryBonus: z.coerce.number().min(0),
+  passportCopyUrl: z.string().optional().nullable(),
+  contractCopyUrl: z.string().optional().nullable(),
+  birthCertificateUrl: z.string().optional().nullable(),
 });
 
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
@@ -54,7 +59,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
 
   const isEditing = !!player;
 
-  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<PlayerFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
     defaultValues: {
       goalsScored: 0,
@@ -63,8 +68,14 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
       redCards: 0,
       matchesPlayed: 0,
       contractDurationMonths: 12,
+      salaryBase: 0,
+      salaryBonus: 0,
     }
   });
+
+  const watchPassport = watch("passportCopyUrl");
+  const watchContract = watch("contractCopyUrl");
+  const watchBirth = watch("birthCertificateUrl");
 
   useEffect(() => {
     if (player && open) {
@@ -83,6 +94,11 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         contractStartDate: player.contractStartDate,
         contractDurationMonths: player.contractDurationMonths,
         matchesPlayed: player.matchesPlayed,
+        salaryBase: player.salaryBase,
+        salaryBonus: player.salaryBonus,
+        passportCopyUrl: player.passportCopyUrl,
+        contractCopyUrl: player.contractCopyUrl,
+        birthCertificateUrl: player.birthCertificateUrl,
       });
       setPhotoPreview(player.photoUrl || null);
     } else if (!player && open) {
@@ -91,6 +107,8 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         formerClub: "", position: "Milieu central", goalsScored: 0, goalsConceded: 0,
         yellowCards: 0, redCards: 0, contractStartDate: new Date().toISOString().split('T')[0],
         contractDurationMonths: 12, matchesPlayed: 0,
+        salaryBase: 0, salaryBonus: 0,
+        passportCopyUrl: null, contractCopyUrl: null, birthCertificateUrl: null,
       });
       setPhotoPreview(null);
     }
@@ -111,6 +129,19 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
     } catch (err) {
       toast({ variant: "destructive", title: "Erreur de téléchargement" });
       setPhotoPreview(player?.photoUrl || null); // revert
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "passportCopyUrl" | "contractCopyUrl" | "birthCertificateUrl") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const res = await uploadImage.mutateAsync(file);
+      setValue(field, res.url);
+      toast({ title: "Document téléchargé avec succès" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Erreur de téléchargement" });
     }
   };
 
@@ -211,11 +242,65 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
                     <Input type="number" {...register("contractDurationMonths")} className="bg-card border-accent/20" />
                   </div>
                 </div>
+
+                <h3 className="text-xl font-display font-semibold border-b pb-2 pt-4">Grille Salariale</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Salaire de base (mensuel)</Label>
+                    <Input type="number" {...register("salaryBase")} className="bg-card" placeholder="Ex: 5000" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Primes de performance</Label>
+                    <Input type="number" {...register("salaryBonus")} className="bg-card" placeholder="Ex: 1000" />
+                  </div>
+                </div>
               </div>
 
-              {/* Statistiques */}
+              {/* Statistiques & Documents */}
               <div className="space-y-6">
-                <h3 className="text-xl font-display font-semibold border-b pb-2">Statistiques de jeu</h3>
+                <h3 className="text-xl font-display font-semibold border-b pb-2">Documents</h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Copie Passeport</Label>
+                      <p className="text-xs text-muted-foreground">{watchPassport ? "Chargé" : "Non chargé"}</p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <label className="cursor-pointer">
+                        {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Choisir"}
+                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, "passportCopyUrl")} disabled={uploadImage.isPending} />
+                      </label>
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Copie Contrat</Label>
+                      <p className="text-xs text-muted-foreground">{watchContract ? "Chargé" : "Non chargé"}</p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <label className="cursor-pointer">
+                        {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Choisir"}
+                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, "contractCopyUrl")} disabled={uploadImage.isPending} />
+                      </label>
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
+                    <div className="space-y-0.5">
+                      <Label className="text-sm">Acte de naissance</Label>
+                      <p className="text-xs text-muted-foreground">{watchBirth ? "Chargé" : "Non chargé"}</p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <label className="cursor-pointer">
+                        {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Choisir"}
+                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, "birthCertificateUrl")} disabled={uploadImage.isPending} />
+                      </label>
+                    </Button>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-display font-semibold border-b pb-2 pt-4">Statistiques de jeu</h3>
                 
                 <div className="space-y-2">
                   <Label>Matchs joués</Label>

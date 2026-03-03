@@ -26,6 +26,12 @@ export const players = pgTable("players", {
   contractDurationMonths: integer("contract_duration_months").notNull(),
   contractEndDate: text("contract_end_date").notNull(), 
   matchesPlayed: integer("matches_played").default(0).notNull(),
+  // New fields
+  salaryBase: integer("salary_base").default(0).notNull(), // Monthly base salary
+  salaryBonus: integer("salary_bonus").default(0).notNull(), // Performance bonus
+  passportCopyUrl: text("passport_copy_url"),
+  contractCopyUrl: text("contract_copy_url"),
+  birthCertificateUrl: text("birth_certificate_url"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -36,7 +42,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertPlayerSchema = createInsertSchema(players).omit({
   id: true,
   contractEndDate: true,
-  userId: true, // Set by backend automatically based on logged in user
+  userId: true, 
 });
 
 export type User = typeof users.$inferSelect;

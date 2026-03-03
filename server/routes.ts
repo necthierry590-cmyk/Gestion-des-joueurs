@@ -126,6 +126,8 @@ export async function registerRoutes(
         redCards: z.coerce.number().optional().default(0),
         contractDurationMonths: z.coerce.number(),
         matchesPlayed: z.coerce.number().optional().default(0),
+        salaryBase: z.coerce.number().optional().default(0),
+        salaryBonus: z.coerce.number().optional().default(0),
       });
       const input = bodySchema.parse(req.body);
       
@@ -161,6 +163,8 @@ export async function registerRoutes(
         redCards: z.coerce.number().optional(),
         contractDurationMonths: z.coerce.number().optional(),
         matchesPlayed: z.coerce.number().optional(),
+        salaryBase: z.coerce.number().optional(),
+        salaryBonus: z.coerce.number().optional(),
       });
       const input = bodySchema.parse(req.body);
 
