@@ -128,6 +128,10 @@ export async function registerRoutes(
         matchesPlayed: z.coerce.number().optional().default(0),
         salaryBase: z.coerce.number().optional().default(0),
         salaryBonus: z.coerce.number().optional().default(0),
+        passportCopyUrl: z.string().optional(),
+        contractCopyUrl: z.string().optional(),
+        birthCertificateUrl: z.string().optional(),
+        documents: z.array(z.string()).optional().default([]),
       });
       const input = bodySchema.parse(req.body);
       
@@ -165,6 +169,10 @@ export async function registerRoutes(
         matchesPlayed: z.coerce.number().optional(),
         salaryBase: z.coerce.number().optional(),
         salaryBonus: z.coerce.number().optional(),
+        passportCopyUrl: z.string().optional(),
+        contractCopyUrl: z.string().optional(),
+        birthCertificateUrl: z.string().optional(),
+        documents: z.array(z.string()).optional(),
       });
       const input = bodySchema.parse(req.body);
 

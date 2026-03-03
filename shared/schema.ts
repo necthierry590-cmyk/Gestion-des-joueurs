@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, text, serial, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -32,6 +33,7 @@ export const players = pgTable("players", {
   passportCopyUrl: text("passport_copy_url"),
   contractCopyUrl: text("contract_copy_url"),
   birthCertificateUrl: text("birth_certificate_url"),
+  documents: text("documents").array().default(sql`'{}'::text[]`).notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

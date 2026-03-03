@@ -33,6 +33,7 @@ const playerFormSchema = z.object({
   passportCopyUrl: z.string().optional().nullable(),
   contractCopyUrl: z.string().optional().nullable(),
   birthCertificateUrl: z.string().optional().nullable(),
+  documents: z.array(z.string()).default([]),
 });
 
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
@@ -73,9 +74,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
     }
   });
 
-  const watchPassport = watch("passportCopyUrl");
-  const watchContract = watch("contractCopyUrl");
-  const watchBirth = watch("birthCertificateUrl");
+  const documents = watch("documents") || [];
 
   useEffect(() => {
     if (player && open) {
@@ -99,6 +98,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         passportCopyUrl: player.passportCopyUrl,
         contractCopyUrl: player.contractCopyUrl,
         birthCertificateUrl: player.birthCertificateUrl,
+        documents: player.documents || [],
       });
       setPhotoPreview(player.photoUrl || null);
     } else if (!player && open) {
@@ -109,6 +109,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         contractDurationMonths: 12, matchesPlayed: 0,
         salaryBase: 0, salaryBonus: 0,
         passportCopyUrl: null, contractCopyUrl: null, birthCertificateUrl: null,
+        documents: [],
       });
       setPhotoPreview(null);
     }
@@ -132,17 +133,27 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "passportCopyUrl" | "contractCopyUrl" | "birthCertificateUrl") => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
 
     try {
-      const res = await uploadImage.mutateAsync(file);
-      setValue(field, res.url);
-      toast({ title: "Document téléchargé avec succès" });
+      const newDocs = [...documents];
+      for (let i = 0; i < files.length; i++) {
+        const res = await uploadImage.mutateAsync(files[i]);
+        newDocs.push(res.url);
+      }
+      setValue("documents", newDocs);
+      toast({ title: "Documents téléchargés avec succès" });
     } catch (err) {
       toast({ variant: "destructive", title: "Erreur de téléchargement" });
     }
+  };
+
+  const removeDocument = (index: number) => {
+    const newDocs = [...documents];
+    newDocs.splice(index, 1);
+    setValue("documents", newDocs);
   };
 
   const onSubmit = async (data: PlayerFormValues) => {
@@ -259,45 +270,25 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
               {/* Statistiques & Documents */}
               <div className="space-y-6">
                 <h3 className="text-xl font-display font-semibold border-b pb-2">Documents</h3>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm">Copie Passeport</Label>
-                      <p className="text-xs text-muted-foreground">{watchPassport ? "Chargé" : "Non chargé"}</p>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <label className="cursor-pointer">
-                        {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Choisir"}
-                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, "passportCopyUrl")} disabled={uploadImage.isPending} />
-                      </label>
-                    </Button>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {documents.map((doc, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-muted p-2 rounded-lg border text-xs">
+                        <span className="truncate max-w-[100px]">Doc {idx + 1}</span>
+                        <button type="button" onClick={() => removeDocument(idx)} className="text-destructive hover:text-destructive/80">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm">Copie Contrat</Label>
-                      <p className="text-xs text-muted-foreground">{watchContract ? "Chargé" : "Non chargé"}</p>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <label className="cursor-pointer">
-                        {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Choisir"}
-                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, "contractCopyUrl")} disabled={uploadImage.isPending} />
-                      </label>
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-card rounded-lg border">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm">Acte de naissance</Label>
-                      <p className="text-xs text-muted-foreground">{watchBirth ? "Chargé" : "Non chargé"}</p>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <label className="cursor-pointer">
-                        {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Choisir"}
-                        <input type="file" className="hidden" onChange={(e) => handleFileUpload(e, "birthCertificateUrl")} disabled={uploadImage.isPending} />
-                      </label>
-                    </Button>
-                  </div>
+                  
+                  <Button type="button" variant="outline" className="w-full border-dashed" asChild>
+                    <label className="cursor-pointer">
+                      {uploadImage.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                      Ajouter des documents
+                      <input type="file" className="hidden" multiple onChange={handleFileUpload} disabled={uploadImage.isPending} />
+                    </label>
+                  </Button>
                 </div>
 
                 <h3 className="text-xl font-display font-semibold border-b pb-2 pt-4">Statistiques de jeu</h3>
