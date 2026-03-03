@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useCreatePlayer, useUpdatePlayer } from "@/hooks/use-players";
 import { useUpload } from "@/hooks/use-upload";
-import { Camera, Loader2, Save } from "lucide-react";
+import { Camera, Loader2, Save, Trash2, Plus } from "lucide-react";
 import type { Player } from "@shared/schema";
 
 // Form schema coercing numbers correctly
