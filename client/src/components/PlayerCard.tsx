@@ -104,7 +104,7 @@ export function PlayerCard({ player, onEdit }: PlayerCardProps) {
             
             <div className="flex justify-between items-center py-2 border-t border-border/50">
               <span className="text-muted-foreground flex items-center gap-1">💰 Salaire</span>
-              <span className="font-bold text-primary">{(player.salaryBase + player.salaryBonus).toLocaleString('fr-FR')} €</span>
+              <span className="font-bold text-primary">{(player.salaryBase + player.salaryBonus).toLocaleString('fr-FR')} FCFA</span>
             </div>
             
             {/* Cards indicator */}

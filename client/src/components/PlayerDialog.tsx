@@ -162,7 +162,12 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         await updatePlayer.mutateAsync({ id: player.id, data });
         toast({ title: "Joueur mis à jour" });
       } else {
-        await createPlayer.mutateAsync(data as any);
+        const createData = {
+          ...data,
+          userId: 0, // Placeholder, backend sets this
+          contractEndDate: "", // Placeholder, backend sets this
+        };
+        await createPlayer.mutateAsync(createData as any);
         toast({ title: "Joueur créé avec succès" });
       }
       onOpenChange(false);
