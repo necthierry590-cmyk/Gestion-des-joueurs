@@ -30,10 +30,10 @@ const playerFormSchema = z.object({
   matchesPlayed: z.coerce.number().min(0),
   salaryBase: z.coerce.number().min(0),
   salaryBonus: z.coerce.number().min(0),
-  passportCopyUrl: z.string().optional().nullable(),
-  contractCopyUrl: z.string().optional().nullable(),
-  birthCertificateUrl: z.string().optional().nullable(),
-  documents: z.array(z.string()).default([]),
+  passportCopyUrl: z.string().optional().nullable().default(null),
+  contractCopyUrl: z.string().optional().nullable().default(null),
+  birthCertificateUrl: z.string().optional().nullable().default(null),
+  documents: z.array(z.string()).optional().default([]),
 });
 
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
@@ -172,7 +172,8 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
       }
       onOpenChange(false);
     } catch (err: any) {
-      toast({ variant: "destructive", title: "Erreur", description: err.message });
+      console.error("Submission error:", err);
+      toast({ variant: "destructive", title: "Erreur", description: err.message || "Une erreur est survenue lors de l'enregistrement" });
     }
   };
 
