@@ -60,8 +60,9 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
 
   const isEditing = !!player;
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<PlayerFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting, isValid } } = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
+    mode: "onChange",
     defaultValues: {
       goalsScored: 0,
       goalsConceded: 0,
@@ -233,6 +234,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
                   <div className="space-y-2">
                     <Label>Lieu de naissance</Label>
                     <Input {...register("placeOfBirth")} className="bg-card" placeholder="Ex: Paris, France" />
+                    {errors.placeOfBirth && <span className="text-xs text-destructive">{errors.placeOfBirth.message}</span>}
                   </div>
                 </div>
 
@@ -241,11 +243,13 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
                   <select {...register("position")} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
                     {positions.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                  {errors.position && <span className="text-xs text-destructive">{errors.position.message}</span>}
                 </div>
 
                 <div className="space-y-2">
                   <Label>Ancien club</Label>
                   <Input {...register("formerClub")} className="bg-card" placeholder="Ex: AS Monaco" />
+                  {errors.formerClub && <span className="text-xs text-destructive">{errors.formerClub.message}</span>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 p-4 bg-accent/5 rounded-xl border border-accent/10">
@@ -331,7 +335,21 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Annuler
               </Button>
-              <Button type="submit" disabled={isSubmitting || uploadImage.isPending} className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[150px]">
+              <Button 
+                type="submit" 
+                disabled={isSubmitting || uploadImage.isPending} 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[150px]"
+                onClick={() => {
+                  if (Object.keys(errors).length > 0) {
+                    console.error("Validation errors:", errors);
+                    toast({
+                      variant: "destructive",
+                      title: "Formulaire invalide",
+                      description: "Veuillez vérifier les champs en rouge."
+                    });
+                  }
+                }}
+              >
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Enregistrer</>}
               </Button>
             </div>

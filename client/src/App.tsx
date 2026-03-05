@@ -8,11 +8,18 @@ import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 // Protect routes that require authentication
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/auth");
+    }
+  }, [user, isLoading, setLocation]);
 
   if (isLoading) {
     return (
@@ -22,10 +29,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
     );
   }
 
-  if (!user) {
-    setLocation("/auth");
-    return null;
-  }
+  if (!user) return null;
 
   return <Component />;
 }
