@@ -30,10 +30,10 @@ const playerFormSchema = z.object({
   matchesPlayed: z.coerce.number().min(0),
   salaryBase: z.coerce.number().min(0),
   salaryBonus: z.coerce.number().min(0),
-  passportCopyUrl: z.string().optional().nullable().default(null),
-  contractCopyUrl: z.string().optional().nullable().default(null),
-  birthCertificateUrl: z.string().optional().nullable().default(null),
-  documents: z.array(z.string()).optional().default([]),
+  passportCopyUrl: z.string().default(""),
+  contractCopyUrl: z.string().default(""),
+  birthCertificateUrl: z.string().default(""),
+  documents: z.array(z.string()).default([]),
 });
 
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
@@ -162,18 +162,17 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         await updatePlayer.mutateAsync({ id: player.id, data });
         toast({ title: "Joueur mis à jour" });
       } else {
-        const createData = {
-          ...data,
-          userId: 0, // Placeholder, backend sets this
-          contractEndDate: "", // Placeholder, backend sets this
-        };
-        await createPlayer.mutateAsync(createData as any);
+        await createPlayer.mutateAsync(data as any);
         toast({ title: "Joueur créé avec succès" });
       }
       onOpenChange(false);
     } catch (err: any) {
-      console.error("Submission error:", err);
-      toast({ variant: "destructive", title: "Erreur", description: err.message || "Une erreur est survenue lors de l'enregistrement" });
+      console.error("Submission error details:", err);
+      let errorMessage = err.message || "Une erreur est survenue lors de l'enregistrement";
+      if (err.response && err.response.data && err.response.data.message) {
+        errorMessage = err.response.data.message;
+      }
+      toast({ variant: "destructive", title: "Erreur", description: errorMessage });
     }
   };
 

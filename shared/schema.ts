@@ -30,9 +30,9 @@ export const players = pgTable("players", {
   // New fields
   salaryBase: integer("salary_base").default(0).notNull(), // Monthly base salary
   salaryBonus: integer("salary_bonus").default(0).notNull(), // Performance bonus
-  passportCopyUrl: text("passport_copy_url"),
-  contractCopyUrl: text("contract_copy_url"),
-  birthCertificateUrl: text("birth_certificate_url"),
+  passportCopyUrl: text("passport_copy_url").default("").notNull(),
+  contractCopyUrl: text("contract_copy_url").default("").notNull(),
+  birthCertificateUrl: text("birth_certificate_url").default("").notNull(),
   documents: text("documents").array().default(sql`'{}'::text[]`).notNull(),
 });
 
