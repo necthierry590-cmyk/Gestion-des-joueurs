@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
+import AdminPanel from "@/pages/AdminPanel";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
@@ -40,6 +41,9 @@ function Router() {
       <Route path="/auth" component={AuthPage} />
       <Route path="/">
         {() => <ProtectedRoute component={Dashboard} />}
+      </Route>
+      <Route path="/admin">
+        {() => <ProtectedRoute component={AdminPanel} />}
       </Route>
       <Route component={NotFound} />
     </Switch>

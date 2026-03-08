@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  role: text("role").default("user").notNull(), // "admin" or "user"
+  approved: text("approved").array().default(sql`'{}'::text[]`).notNull(), // List of approved visitor emails
 });
 
 export const players = pgTable("players", {
@@ -45,6 +47,14 @@ export const insertPlayerSchema = createInsertSchema(players).omit({
   id: true,
   contractEndDate: true,
   userId: true, 
+});
+
+export const visitors = pgTable("visitors", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  adminId: integer("admin_id").notNull(), // ID of the admin who invited them
+  status: text("status").default("pending").notNull(), // "pending", "approved", "rejected"
+  createdAt: text("created_at").default(sql`NOW()`).notNull(),
 });
 
 export type User = typeof users.$inferSelect;
