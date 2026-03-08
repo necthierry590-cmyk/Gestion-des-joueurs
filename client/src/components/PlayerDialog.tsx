@@ -60,7 +60,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
 
   const isEditing = !!player;
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting, isValid } } = useForm<PlayerFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<PlayerFormValues>({
     resolver: zodResolver(playerFormSchema),
     mode: "onChange",
     defaultValues: {
@@ -72,6 +72,10 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
       contractDurationMonths: 12,
       salaryBase: 0,
       salaryBonus: 0,
+      passportCopyUrl: "",
+      contractCopyUrl: "",
+      birthCertificateUrl: "",
+      documents: [],
     }
   });
 
@@ -96,9 +100,9 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         matchesPlayed: player.matchesPlayed,
         salaryBase: player.salaryBase,
         salaryBonus: player.salaryBonus,
-        passportCopyUrl: player.passportCopyUrl,
-        contractCopyUrl: player.contractCopyUrl,
-        birthCertificateUrl: player.birthCertificateUrl,
+        passportCopyUrl: player.passportCopyUrl || "",
+        contractCopyUrl: player.contractCopyUrl || "",
+        birthCertificateUrl: player.birthCertificateUrl || "",
         documents: player.documents || [],
       });
       setPhotoPreview(player.photoUrl || null);
@@ -109,7 +113,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         yellowCards: 0, redCards: 0, contractStartDate: new Date().toISOString().split('T')[0],
         contractDurationMonths: 12, matchesPlayed: 0,
         salaryBase: 0, salaryBonus: 0,
-        passportCopyUrl: null, contractCopyUrl: null, birthCertificateUrl: null,
+        passportCopyUrl: "", contractCopyUrl: "", birthCertificateUrl: "",
         documents: [],
       });
       setPhotoPreview(null);
@@ -339,16 +343,6 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
                 type="submit" 
                 disabled={isSubmitting || uploadImage.isPending} 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground min-w-[150px]"
-                onClick={() => {
-                  if (Object.keys(errors).length > 0) {
-                    console.error("Validation errors:", errors);
-                    toast({
-                      variant: "destructive",
-                      title: "Formulaire invalide",
-                      description: "Veuillez vérifier les champs en rouge."
-                    });
-                  }
-                }}
               >
                 {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Enregistrer</>}
               </Button>
