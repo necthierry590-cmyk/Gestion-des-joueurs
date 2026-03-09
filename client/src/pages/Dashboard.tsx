@@ -60,10 +60,6 @@ export default function Dashboard() {
             <span className="text-sm font-medium text-muted-foreground hidden sm:block">
               {user?.email}
             </span>
-            <Button variant="ghost" size="sm" onClick={() => setLocation("/")} className="text-muted-foreground hover:text-foreground">
-              <Users className="w-4 h-4 mr-1" />
-              Accueil
-            </Button>
             {isAdmin && (
               <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} className="text-primary hover:bg-primary/10">
                 <Shield className="w-4 h-4 mr-1" />

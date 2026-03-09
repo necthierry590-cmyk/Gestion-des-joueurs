@@ -37,9 +37,10 @@ export default function HomePage() {
               <Users className="w-12 h-12 text-primary mb-4" />
               <h3 className="text-xl font-display font-bold mb-2">Mon Tableau de Bord</h3>
               <p className="text-muted-foreground mb-6">Gérez vos joueurs et consultez leurs statistiques.</p>
-              <Button onClick={() => setLocation("/")} className="w-full">
-                Accéder au Tableau de Bord
+              <Button className="w-full" disabled>
+                Tableau de Bord
               </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">Vous êtes sur le tableau de bord</p>
             </div>
 
             {/* Admin Panel - Only for admins */}

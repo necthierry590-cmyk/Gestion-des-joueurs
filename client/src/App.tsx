@@ -37,20 +37,34 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   return <Component />;
 }
 
+function RootRoute() {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
+  if (user) {
+    return <Dashboard />;
+  }
+  
+  return <HomePage />;
+}
+
 function Router() {
   return (
     <Switch>
-      <Route path="/home" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/dashboard">
-        {() => <ProtectedRoute component={Dashboard} />}
-      </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}
       </Route>
       <Route path="/visitors" component={VisitorsPage} />
       <Route path="/">
-        {() => <HomePage />}
+        {() => <RootRoute />}
       </Route>
       <Route component={NotFound} />
     </Switch>
