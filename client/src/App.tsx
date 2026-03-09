@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/AuthPage";
+import HomePage from "@/pages/HomePage";
 import Dashboard from "@/pages/Dashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import VisitorsPage from "@/pages/VisitorsPage";
@@ -39,14 +40,18 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <Switch>
+      <Route path="/home" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/">
+      <Route path="/dashboard">
         {() => <ProtectedRoute component={Dashboard} />}
       </Route>
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}
       </Route>
       <Route path="/visitors" component={VisitorsPage} />
+      <Route path="/">
+        {() => <HomePage />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
