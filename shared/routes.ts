@@ -103,6 +103,17 @@ export const api = {
         400: errorSchemas.validation,
       }
     }
+  },
+  visitors: {
+    request: {
+      method: 'POST' as const,
+      path: '/api/visitors/request' as const,
+      input: z.object({ email: z.string().email() }),
+      responses: {
+        201: z.object({ message: z.string() }),
+        400: errorSchemas.validation,
+      }
+    }
   }
 };
 

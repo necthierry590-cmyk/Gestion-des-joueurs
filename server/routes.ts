@@ -212,5 +212,19 @@ export async function registerRoutes(
     res.status(200).json({ url });
   });
 
+  app.post(api.visitors.request.path, async (req, res) => {
+    try {
+      const input = api.visitors.request.input.parse(req.body);
+      // For now, just acknowledge the request
+      // In production, this would save to the visitors table and send emails
+      res.status(201).json({ message: "Votre demande d'accès a été enregistrée" });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
   return httpServer;
 }

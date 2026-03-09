@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import AdminPanel from "@/pages/AdminPanel";
+import VisitorsPage from "@/pages/VisitorsPage";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
@@ -45,6 +46,7 @@ function Router() {
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}
       </Route>
+      <Route path="/visitors" component={VisitorsPage} />
       <Route component={NotFound} />
     </Switch>
   );
