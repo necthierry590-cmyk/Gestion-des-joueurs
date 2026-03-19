@@ -2,13 +2,16 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { usePlayers } from "@/hooks/use-players";
 import { useStaff } from "@/hooks/use-staff";
+import { useSeason, useUpdateSeason } from "@/hooks/use-season";
 import { PlayerCard } from "@/components/PlayerCard";
 import { StaffCard } from "@/components/StaffCard";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { StaffDialog } from "@/components/StaffDialog";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Users, Shield, Briefcase } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { LogOut, Plus, Users, Shield, Briefcase, Calendar, Check, Pencil } from "lucide-react";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import type { Player } from "@shared/schema";
 import type { StaffMember } from "@shared/schema";
 
@@ -18,8 +21,13 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const { data: players, isLoading: loadingPlayers } = usePlayers();
   const { data: staffMembers, isLoading: loadingStaff } = useStaff();
+  const { data: seasonData } = useSeason();
+  const updateSeason = useUpdateSeason();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("joueurs");
+  const [editingSeason, setEditingSeason] = useState(false);
+  const [seasonInput, setSeasonInput] = useState("");
 
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
@@ -28,6 +36,7 @@ export default function Dashboard() {
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
 
   const isAdmin = (user as any)?.role === "admin";
+  const currentSeason = seasonData?.season || "2025 - 2026";
 
   const handleCreatePlayer = () => { setEditingPlayer(null); setPlayerDialogOpen(true); };
   const handleEditPlayer = (player: Player) => { setEditingPlayer(player); setPlayerDialogOpen(true); };
@@ -35,7 +44,21 @@ export default function Dashboard() {
   const handleCreateStaff = () => { setEditingStaff(null); setStaffDialogOpen(true); };
   const handleEditStaff = (member: StaffMember) => { setEditingStaff(member); setStaffDialogOpen(true); };
 
-  const isLoading = activeTab === "joueurs" ? loadingPlayers : loadingStaff;
+  const handleStartEditSeason = () => {
+    setSeasonInput(currentSeason);
+    setEditingSeason(true);
+  };
+
+  const handleSaveSeason = async () => {
+    if (!seasonInput.trim()) return;
+    try {
+      await updateSeason.mutateAsync(seasonInput.trim());
+      setEditingSeason(false);
+      toast({ title: "Saison mise à jour", description: `Saison : ${seasonInput.trim()}` });
+    } catch {
+      toast({ variant: "destructive", title: "Erreur lors de la mise à jour de la saison" });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -64,6 +87,50 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        {/* Widget Saison */}
+        <div className="flex items-center gap-3 mb-6 bg-card border border-border/60 rounded-2xl px-5 py-3 w-fit shadow-sm">
+          <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
+            <Calendar className="w-4 h-4" />
+          </div>
+          <span className="text-sm text-muted-foreground font-medium">Saison :</span>
+          {editingSeason ? (
+            <div className="flex items-center gap-2">
+              <Input
+                data-testid="input-season"
+                value={seasonInput}
+                onChange={e => setSeasonInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSaveSeason(); if (e.key === "Escape") setEditingSeason(false); }}
+                className="h-7 w-36 text-sm font-bold px-2"
+                placeholder="2025 - 2026"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleSaveSeason}
+                disabled={updateSeason.isPending}
+                className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
+                data-testid="button-save-season"
+              >
+                <Check className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-foreground text-sm" data-testid="text-current-season">{currentSeason}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleStartEditSeason}
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                data-testid="button-edit-season"
+              >
+                <Pencil className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+
         {/* Onglets + Bouton d'action */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex gap-2 bg-muted/50 p-1 rounded-xl">

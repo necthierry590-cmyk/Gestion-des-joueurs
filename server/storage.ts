@@ -1,8 +1,12 @@
 import { db } from "./db";
-import { users, players, staff, type InsertUser, type User, type InsertPlayer, type Player, type UpdatePlayerRequest, type StaffMember, type InsertStaff, type UpdateStaffRequest } from "@shared/schema";
+import { users, players, staff, settings, type InsertUser, type User, type InsertPlayer, type Player, type UpdatePlayerRequest, type StaffMember, type InsertStaff, type UpdateStaffRequest, type Setting } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
+  // Settings
+  getSetting(key: string): Promise<Setting | undefined>;
+  setSetting(key: string, value: string): Promise<Setting>;
+
   // Auth
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -26,6 +30,22 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [row] = await db.select().from(settings).where(eq(settings.key, key));
+    return row;
+  }
+
+  async setSetting(key: string, value: string): Promise<Setting> {
+    const existing = await this.getSetting(key);
+    if (existing) {
+      const [updated] = await db.update(settings).set({ value }).where(eq(settings.key, key)).returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(settings).values({ key, value }).returning();
+      return created;
+    }
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;

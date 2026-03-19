@@ -88,6 +88,13 @@ export type StaffMember = typeof staff.$inferSelect;
 export type InsertStaff = z.infer<typeof insertStaffSchema>;
 export type UpdateStaffRequest = Partial<InsertStaff>;
 
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+});
+
+export type Setting = typeof settings.$inferSelect;
+
 export const visitors = pgTable("visitors", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),

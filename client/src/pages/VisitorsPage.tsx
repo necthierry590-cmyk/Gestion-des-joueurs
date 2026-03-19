@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { PlayerCard } from "@/components/PlayerCard";
 import { StaffCard } from "@/components/StaffCard";
-import { Button } from "@/components/ui/button";
 import { Eye, Users, Briefcase } from "lucide-react";
 import type { Player, StaffMember } from "@shared/schema";
 
@@ -18,6 +17,12 @@ export default function VisitorsPage() {
   const { data: staffMembers, isLoading: loadingStaff } = useQuery<StaffMember[]>({
     queryKey: ["/api/staff/all"],
   });
+
+  const { data: seasonData } = useQuery<{ season: string }>({
+    queryKey: ["/api/settings/season"],
+  });
+
+  const currentSeason = seasonData?.season || "2025 - 2026";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -71,7 +76,9 @@ export default function VisitorsPage() {
         {activeTab === "joueurs" && (
           <section>
             <div className="mb-6">
-              <h2 className="text-3xl font-display font-bold">Nos Joueurs</h2>
+              <h2 className="text-3xl font-display font-bold" data-testid="text-players-title">
+                Joueurs saison {currentSeason}
+              </h2>
               <p className="text-muted-foreground mt-1">Profils de l'effectif en consultation libre.</p>
             </div>
 
@@ -102,7 +109,9 @@ export default function VisitorsPage() {
         {activeTab === "staff" && (
           <section>
             <div className="mb-6">
-              <h2 className="text-3xl font-display font-bold">Staff Technique</h2>
+              <h2 className="text-3xl font-display font-bold" data-testid="text-staff-title">
+                Staff Technique {currentSeason}
+              </h2>
               <p className="text-muted-foreground mt-1">Notre encadrement technique et médical.</p>
             </div>
 

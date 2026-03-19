@@ -212,6 +212,22 @@ export async function registerRoutes(
     res.status(200).json({ url });
   });
 
+  // --- Settings Routes ---
+
+  app.get("/api/settings/season", async (_req, res) => {
+    const setting = await storage.getSetting("season");
+    res.json({ season: setting?.value || "2025 - 2026" });
+  });
+
+  app.put("/api/settings/season", requireAuth, async (req, res) => {
+    const { season } = req.body;
+    if (!season || typeof season !== "string") {
+      return res.status(400).json({ message: "Saison invalide" });
+    }
+    const updated = await storage.setSetting("season", season.trim());
+    res.json({ season: updated.value });
+  });
+
   // --- Staff Routes ---
 
   app.get("/api/staff", requireAuth, async (req, res) => {
