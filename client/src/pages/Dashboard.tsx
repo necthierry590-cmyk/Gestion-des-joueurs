@@ -68,7 +68,7 @@ export default function Dashboard() {
             <div className="bg-primary text-primary-foreground p-2 rounded-lg">
               <Users className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-display font-bold tracking-tight">ProClub Manager</h1>
+            <h1 className="text-xl font-display font-bold tracking-tight">UlcySportPro <span className="text-primary/60 font-normal text-base">(USP)</span></h1>
           </div>
 
           <div className="flex items-center gap-3">
