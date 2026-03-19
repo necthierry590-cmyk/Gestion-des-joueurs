@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
-import { insertPlayerSchema, insertUserSchema } from "@shared/schema";
+import { insertPlayerSchema, insertUserSchema, insertStaffSchema } from "@shared/schema";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -210,6 +210,81 @@ export async function registerRoutes(
     }
     const url = `/uploads/${req.file.filename}`;
     res.status(200).json({ url });
+  });
+
+  // --- Staff Routes ---
+
+  app.get("/api/staff", requireAuth, async (req, res) => {
+    const members = await storage.getStaff((req.user as any).id);
+    res.json(members);
+  });
+
+  app.get("/api/staff/all", async (_req, res) => {
+    const members = await storage.getAllStaff();
+    res.json(members);
+  });
+
+  app.post("/api/staff", requireAuth, async (req, res) => {
+    try {
+      const bodySchema = insertStaffSchema.extend({
+        contractDurationMonths: z.coerce.number(),
+        salaryBase: z.coerce.number().optional().default(0),
+        salaryBonus: z.coerce.number().optional().default(0),
+        documents: z.array(z.string()).optional().default([]),
+      });
+      const input = bodySchema.parse(req.body);
+      const startDate = new Date(input.contractStartDate);
+      const endDate = addMonths(startDate, input.contractDurationMonths);
+      const contractEndDate = format(endDate, "yyyy-MM-dd");
+      const member = await storage.createStaffMember((req.user as any).id, { ...input, contractEndDate });
+      res.status(201).json(member);
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.put("/api/staff/:id", requireAuth, async (req, res) => {
+    try {
+      const memberId = Number(req.params.id);
+      const existing = await storage.getStaffMember(memberId);
+      if (!existing || existing.userId !== (req.user as any).id) {
+        return res.status(404).json({ message: "Membre non trouvé" });
+      }
+      const bodySchema = insertStaffSchema.partial().extend({
+        contractDurationMonths: z.coerce.number().optional(),
+        salaryBase: z.coerce.number().optional(),
+        salaryBonus: z.coerce.number().optional(),
+        documents: z.array(z.string()).optional(),
+      });
+      const input = bodySchema.parse(req.body);
+      let contractEndDate = existing.contractEndDate;
+      if (input.contractStartDate || input.contractDurationMonths !== undefined) {
+        const startDate = input.contractStartDate ? new Date(input.contractStartDate) : new Date(existing.contractStartDate);
+        const duration = input.contractDurationMonths !== undefined ? input.contractDurationMonths : existing.contractDurationMonths;
+        contractEndDate = format(addMonths(startDate, duration), "yyyy-MM-dd");
+      }
+      const updated = await storage.updateStaffMember(memberId, { ...input, contractEndDate });
+      res.json(updated);
+    } catch (err) {
+      if (err instanceof z.ZodError) return res.status(400).json({ message: err.errors[0].message });
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  });
+
+  app.delete("/api/staff/:id", requireAuth, async (req, res) => {
+    const memberId = Number(req.params.id);
+    const existing = await storage.getStaffMember(memberId);
+    if (!existing || existing.userId !== (req.user as any).id) {
+      return res.status(404).json({ message: "Membre non trouvé" });
+    }
+    await storage.deleteStaffMember(memberId);
+    res.status(204).send();
+  });
+
+  app.get("/api/players/all", async (_req, res) => {
+    const allPlayers = await storage.getAllPlayers();
+    res.json(allPlayers);
   });
 
   app.post(api.visitors.request.path, async (req, res) => {
