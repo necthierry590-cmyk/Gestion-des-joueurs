@@ -137,6 +137,7 @@ export async function registerRoutes(
         contractCopyUrl: z.string().optional(),
         birthCertificateUrl: z.string().optional(),
         documents: z.array(z.string()).optional().default([]),
+        jerseyNumber: z.coerce.number().min(1).max(99).optional().nullable(),
       });
       const input = bodySchema.parse(req.body);
       
@@ -178,6 +179,7 @@ export async function registerRoutes(
         contractCopyUrl: z.string().optional(),
         birthCertificateUrl: z.string().optional(),
         documents: z.array(z.string()).optional(),
+        jerseyNumber: z.coerce.number().min(1).max(99).optional().nullable(),
       });
       const input = bodySchema.parse(req.body);
 

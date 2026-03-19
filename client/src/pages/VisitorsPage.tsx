@@ -97,9 +97,7 @@ export default function VisitorsPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {players.map(player => (
-                  <div key={player.id} className="pointer-events-none">
-                    <PlayerCard player={player} onEdit={() => {}} />
-                  </div>
+                  <PlayerCard key={player.id} player={player} onEdit={() => {}} readOnly />
                 ))}
               </div>
             )}

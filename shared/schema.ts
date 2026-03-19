@@ -36,6 +36,7 @@ export const players = pgTable("players", {
   contractCopyUrl: text("contract_copy_url").default("").notNull(),
   birthCertificateUrl: text("birth_certificate_url").default("").notNull(),
   documents: text("documents").array().default(sql`'{}'::text[]`).notNull(),
+  jerseyNumber: integer("jersey_number"),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

@@ -1,7 +1,7 @@
 import { Player } from "@shared/schema";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Pencil, Trash2, Trophy, Shield, Calendar, MapPin, Activity } from "lucide-react";
+import { Pencil, Trash2, Trophy, Shield, Calendar, MapPin, Activity, Hash } from "lucide-react";
 import { Button } from "./ui/button";
 import { useDeletePlayer } from "@/hooks/use-players";
 import { useToast } from "@/hooks/use-toast";
@@ -11,9 +11,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface PlayerCardProps {
   player: Player;
   onEdit: (player: Player) => void;
+  readOnly?: boolean;
 }
 
-export function PlayerCard({ player, onEdit }: PlayerCardProps) {
+export function PlayerCard({ player, onEdit, readOnly = false }: PlayerCardProps) {
   const { toast } = useToast();
   const deletePlayer = useDeletePlayer();
   const [showDelete, setShowDelete] = useState(false);
@@ -29,24 +30,33 @@ export function PlayerCard({ player, onEdit }: PlayerCardProps) {
 
   const isGoalkeeper = player.position.toLowerCase().includes("gardien");
   const formatDate = (dateStr: string) => {
-    try { return format(parseISO(dateStr), "d MMM yyyy", { locale: fr }); } 
+    try { return format(parseISO(dateStr), "d MMM yyyy", { locale: fr }); }
     catch { return dateStr; }
   };
 
   return (
     <>
       <div className="group relative bg-card rounded-2xl overflow-hidden border border-border/50 shadow-lg shadow-black/5 hover:shadow-xl hover:border-primary/30 transition-all duration-300 hover:-translate-y-1">
-        
+
         {/* Header / Photo Banner */}
         <div className="h-24 bg-gradient-to-r from-primary to-accent/80 relative">
-          <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full bg-white/90 hover:bg-white text-primary shadow-sm" onClick={() => onEdit(player)}>
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button size="icon" variant="destructive" className="h-8 w-8 rounded-full shadow-sm" onClick={() => setShowDelete(true)}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          {!readOnly && (
+            <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full bg-white/90 hover:bg-white text-primary shadow-sm" onClick={() => onEdit(player)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button size="icon" variant="destructive" className="h-8 w-8 rounded-full shadow-sm" onClick={() => setShowDelete(true)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          {/* Dossard badge */}
+          {player.jerseyNumber != null && (
+            <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/20 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-sm font-bold">
+              <Hash className="h-3 w-3" />
+              {player.jerseyNumber}
+            </div>
+          )}
         </div>
 
         {/* Profile Avatar */}
@@ -98,16 +108,19 @@ export function PlayerCard({ player, onEdit }: PlayerCardProps) {
               <span className="font-medium text-foreground">{player.formerClub}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-t border-border/50">
-              <span className="text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3"/> Fin contrat</span>
+              <span className="text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Fin contrat</span>
               <span className="font-medium text-foreground">{formatDate(player.contractEndDate)}</span>
             </div>
-            
-            <div className="flex justify-between items-center py-2 border-t border-border/50">
-              <span className="text-muted-foreground flex items-center gap-1">💰 Salaire</span>
-              <span className="font-bold text-primary">{(player.salaryBase + player.salaryBonus).toLocaleString('fr-FR')} FCFA</span>
-            </div>
-            
-            {/* Cards indicator */}
+
+            {/* Salaire : visible uniquement en mode admin */}
+            {!readOnly && (
+              <div className="flex justify-between items-center py-2 border-t border-border/50">
+                <span className="text-muted-foreground flex items-center gap-1">💰 Salaire</span>
+                <span className="font-bold text-primary">{(player.salaryBase + player.salaryBonus).toLocaleString('fr-FR')} FCFA</span>
+              </div>
+            )}
+
+            {/* Discipline */}
             <div className="flex justify-between items-center py-2 border-t border-border/50">
               <span className="text-muted-foreground">Discipline</span>
               <div className="flex gap-2">
@@ -123,22 +136,24 @@ export function PlayerCard({ player, onEdit }: PlayerCardProps) {
         </div>
       </div>
 
-      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action supprimera définitivement le profil de {player.firstName} {player.lastName}.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {!readOnly && (
+        <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action supprimera définitivement le profil de {player.firstName} {player.lastName}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </>
   );
 }

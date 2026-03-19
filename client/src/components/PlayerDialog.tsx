@@ -34,6 +34,7 @@ const playerFormSchema = z.object({
   contractCopyUrl: z.string().default(""),
   birthCertificateUrl: z.string().default(""),
   documents: z.array(z.string()).default([]),
+  jerseyNumber: z.coerce.number().min(1).max(99).optional().nullable(),
 });
 
 type PlayerFormValues = z.infer<typeof playerFormSchema>;
@@ -104,6 +105,7 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
         contractCopyUrl: player.contractCopyUrl || "",
         birthCertificateUrl: player.birthCertificateUrl || "",
         documents: player.documents || [],
+        jerseyNumber: player.jerseyNumber ?? null,
       });
       setPhotoPreview(player.photoUrl || null);
     } else if (!player && open) {
@@ -242,12 +244,19 @@ export function PlayerDialog({ open, onOpenChange, player }: PlayerDialogProps) 
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Poste</Label>
-                  <select {...register("position")} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                    {positions.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                  {errors.position && <span className="text-xs text-destructive">{errors.position.message}</span>}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Poste</Label>
+                    <select {...register("position")} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                      {positions.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    {errors.position && <span className="text-xs text-destructive">{errors.position.message}</span>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Dossard</Label>
+                    <Input type="number" {...register("jerseyNumber")} className="bg-card" placeholder="Ex: 10" min={1} max={99} />
+                    {errors.jerseyNumber && <span className="text-xs text-destructive">{errors.jerseyNumber.message as string}</span>}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

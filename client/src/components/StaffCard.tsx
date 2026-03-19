@@ -76,12 +76,14 @@ export function StaffCard({ member, onEdit, readOnly = false }: StaffCardProps) 
           <span className="text-muted-foreground flex items-center gap-1.5"><Briefcase className="w-3.5 h-3.5" /> Fin contrat</span>
           <span className="font-medium">{formatDate(member.contractEndDate)}</span>
         </div>
-        <div className="flex justify-between items-center py-1.5 border-t border-border/40 mt-1">
-          <span className="text-muted-foreground">💰 Salaire</span>
-          <span className="font-bold text-primary">
-            {(member.salaryBase + member.salaryBonus).toLocaleString("fr-FR")} FCFA
-          </span>
-        </div>
+        {!readOnly && (
+          <div className="flex justify-between items-center py-1.5 border-t border-border/40 mt-1">
+            <span className="text-muted-foreground">💰 Salaire</span>
+            <span className="font-bold text-primary">
+              {(member.salaryBase + member.salaryBonus).toLocaleString("fr-FR")} FCFA
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
