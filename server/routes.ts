@@ -109,6 +109,11 @@ export async function registerRoutes(
     res.json(players);
   });
 
+  app.get("/api/players/all", async (_req, res) => {
+    const allPlayers = await storage.getAllPlayers();
+    res.json(allPlayers);
+  });
+
   app.get(api.players.get.path, requireAuth, async (req, res) => {
     const player = await storage.getPlayer(Number(req.params.id));
     if (!player || player.userId !== (req.user as any).id) {
@@ -296,11 +301,6 @@ export async function registerRoutes(
     }
     await storage.deleteStaffMember(memberId);
     res.status(204).send();
-  });
-
-  app.get("/api/players/all", async (_req, res) => {
-    const allPlayers = await storage.getAllPlayers();
-    res.json(allPlayers);
   });
 
   app.post(api.visitors.request.path, async (req, res) => {
