@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { users, players, staff, settings, type InsertUser, type User, type InsertPlayer, type Player, type UpdatePlayerRequest, type StaffMember, type InsertStaff, type UpdateStaffRequest, type Setting } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 
 export interface IStorage {
   // Settings
@@ -11,6 +11,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  transferAdminRole(newAdminEmail: string): Promise<User>;
 
   // Players
   getPlayers(userId: number): Promise<Player[]>;
@@ -59,6 +60,16 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  async transferAdminRole(newAdminEmail: string): Promise<User> {
+    const newAdmin = await this.getUserByEmail(newAdminEmail);
+    if (!newAdmin) throw new Error("Utilisateur introuvable");
+    // Revoke admin from everyone else
+    await db.update(users).set({ role: "user" }).where(ne(users.email, newAdminEmail));
+    // Grant admin to new account
+    const [updated] = await db.update(users).set({ role: "admin" }).where(eq(users.email, newAdminEmail)).returning();
+    return updated;
   }
 
   async getPlayers(userId: number): Promise<Player[]> {

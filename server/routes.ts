@@ -219,6 +219,28 @@ export async function registerRoutes(
     res.status(200).json({ url });
   });
 
+  // --- Admin Transfer Route ---
+
+  app.post("/api/admin/transfer-role", requireAuth, async (req, res) => {
+    const currentUser = req.user as any;
+    if (currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Accès refusé" });
+    }
+    const { email } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email requis" });
+    }
+    if (email.trim().toLowerCase() === currentUser.email.toLowerCase()) {
+      return res.status(400).json({ message: "Vous êtes déjà l'administrateur" });
+    }
+    try {
+      await storage.transferAdminRole(email.trim().toLowerCase());
+      res.json({ message: `Le rôle admin a été transféré à ${email.trim()}` });
+    } catch (err: any) {
+      res.status(404).json({ message: err.message || "Erreur lors du transfert" });
+    }
+  });
+
   // --- Settings Routes ---
 
   app.get("/api/settings/season", async (_req, res) => {
