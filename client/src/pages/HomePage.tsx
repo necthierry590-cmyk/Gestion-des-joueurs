@@ -15,7 +15,7 @@ export default function HomePage() {
       <div className="min-h-screen bg-background flex flex-col">
         <header className="bg-card/80 backdrop-blur-md border-b sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <h1 className="text-xl font-display font-bold">ProClub Manager</h1>
+            <h1 className="text-xl font-display font-bold">UlcySportPro <span className="text-primary/60 font-normal text-base">(USP)</span></h1>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">{user.email}</span>
               <Button variant="ghost" size="icon" onClick={() => logout.mutate()} className="text-destructive hover:text-destructive">
@@ -75,13 +75,13 @@ export default function HomePage() {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="bg-card/80 backdrop-blur-md border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <h1 className="text-xl font-display font-bold">ProClub Manager</h1>
+          <h1 className="text-xl font-display font-bold">UlcySportPro <span className="text-primary/60 font-normal text-base">(USP)</span></h1>
         </div>
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-display font-bold mb-4">Bienvenue sur ProClub Manager</h2>
+          <h2 className="text-4xl font-display font-bold mb-4">Bienvenue sur UlcySportPro (USP)</h2>
           <p className="text-lg text-muted-foreground">Plateforme de gestion des joueurs professionnels</p>
         </div>
 
