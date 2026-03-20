@@ -9,6 +9,7 @@ import HomePage from "@/pages/HomePage";
 import Dashboard from "@/pages/Dashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import VisitorsPage from "@/pages/VisitorsPage";
+import SetupPage from "@/pages/SetupPage";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
@@ -58,6 +59,7 @@ function RootRoute() {
 function Router() {
   return (
     <Switch>
+      <Route path="/setup" component={SetupPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}

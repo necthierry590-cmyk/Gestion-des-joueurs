@@ -219,6 +219,24 @@ export async function registerRoutes(
     res.status(200).json({ url });
   });
 
+  // --- Initial Setup Route (uniquement si aucun admin n'existe) ---
+  app.post("/api/setup", async (req, res) => {
+    const adminExists = await storage.hasAdmin();
+    if (adminExists) {
+      return res.status(403).json({ message: "Configuration déjà effectuée" });
+    }
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email et mot de passe requis" });
+    }
+    try {
+      const admin = await storage.forceSetAdmin(email.trim(), password);
+      res.json({ message: `Compte admin configuré : ${admin.email}` });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erreur de configuration" });
+    }
+  });
+
   // --- Admin Transfer Route ---
 
   app.post("/api/admin/transfer-role", requireAuth, async (req, res) => {

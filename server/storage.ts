@@ -1,6 +1,6 @@
 import { db } from "./db";
 import { users, players, staff, settings, type InsertUser, type User, type InsertPlayer, type Player, type UpdatePlayerRequest, type StaffMember, type InsertStaff, type UpdateStaffRequest, type Setting } from "@shared/schema";
-import { eq, ne } from "drizzle-orm";
+import { eq, ne, sql as drizzleSql } from "drizzle-orm";
 
 export interface IStorage {
   // Settings
@@ -12,6 +12,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   transferAdminRole(newAdminEmail: string): Promise<User>;
+  hasAdmin(): Promise<boolean>;
+  forceSetAdmin(email: string, password: string): Promise<User>;
 
   // Players
   getPlayers(userId: number): Promise<Player[]>;
@@ -65,11 +67,28 @@ export class DatabaseStorage implements IStorage {
   async transferAdminRole(newAdminEmail: string): Promise<User> {
     const newAdmin = await this.getUserByEmail(newAdminEmail);
     if (!newAdmin) throw new Error("Utilisateur introuvable");
-    // Revoke admin from everyone else
     await db.update(users).set({ role: "user" }).where(ne(users.email, newAdminEmail));
-    // Grant admin to new account
     const [updated] = await db.update(users).set({ role: "admin" }).where(eq(users.email, newAdminEmail)).returning();
     return updated;
+  }
+
+  async hasAdmin(): Promise<boolean> {
+    const result = await db.select().from(users).where(eq(users.role, "admin"));
+    return result.length > 0;
+  }
+
+  async forceSetAdmin(email: string, password: string): Promise<User> {
+    // Revoke all admins
+    await db.update(users).set({ role: "user" });
+    // Upsert the target user
+    const existing = await this.getUserByEmail(email);
+    if (existing) {
+      const [updated] = await db.update(users).set({ role: "admin", password }).where(eq(users.email, email)).returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(users).values({ email, password, role: "admin" }).returning();
+      return created;
+    }
   }
 
   async getPlayers(userId: number): Promise<Player[]> {
