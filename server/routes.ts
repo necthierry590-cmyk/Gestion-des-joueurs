@@ -237,23 +237,57 @@ export async function registerRoutes(
     }
   });
 
-  // --- Admin Transfer Route ---
+  // --- Admin Management Routes ---
+
+  app.get("/api/admin/users", requireAuth, async (req, res) => {
+    if ((req.user as any).role !== "admin") return res.status(403).json({ message: "Accès refusé" });
+    const allUsers = await storage.getAllUsers();
+    res.json(allUsers.map(u => ({ id: u.id, email: u.email, role: u.role })));
+  });
+
+  app.post("/api/admin/users/:id/promote", requireAuth, async (req, res) => {
+    if ((req.user as any).role !== "admin") return res.status(403).json({ message: "Accès refusé" });
+    const id = Number(req.params.id);
+    try {
+      const updated = await storage.setUserRole(id, "admin");
+      res.json({ id: updated.id, email: updated.email, role: updated.role });
+    } catch {
+      res.status(500).json({ message: "Erreur lors de la promotion" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/revoke", requireAuth, async (req, res) => {
+    if ((req.user as any).role !== "admin") return res.status(403).json({ message: "Accès refusé" });
+    const id = Number(req.params.id);
+    if (id === (req.user as any).id) return res.status(400).json({ message: "Vous ne pouvez pas révoquer vos propres droits" });
+    try {
+      const updated = await storage.setUserRole(id, "user");
+      res.json({ id: updated.id, email: updated.email, role: updated.role });
+    } catch {
+      res.status(500).json({ message: "Erreur lors de la révocation" });
+    }
+  });
+
+  app.post("/api/admin/users/create", requireAuth, async (req, res) => {
+    if ((req.user as any).role !== "admin") return res.status(403).json({ message: "Accès refusé" });
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: "Email et mot de passe requis" });
+    try {
+      const user = await storage.createAdminUser(email.trim().toLowerCase(), password);
+      res.status(201).json({ id: user.id, email: user.email, role: user.role });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erreur de création" });
+    }
+  });
 
   app.post("/api/admin/transfer-role", requireAuth, async (req, res) => {
     const currentUser = req.user as any;
-    if (currentUser.role !== "admin") {
-      return res.status(403).json({ message: "Accès refusé" });
-    }
+    if (currentUser.role !== "admin") return res.status(403).json({ message: "Accès refusé" });
     const { email } = req.body;
-    if (!email || typeof email !== "string") {
-      return res.status(400).json({ message: "Email requis" });
-    }
-    if (email.trim().toLowerCase() === currentUser.email.toLowerCase()) {
-      return res.status(400).json({ message: "Vous êtes déjà l'administrateur" });
-    }
+    if (!email) return res.status(400).json({ message: "Email requis" });
     try {
       await storage.transferAdminRole(email.trim().toLowerCase());
-      res.json({ message: `Le rôle admin a été transféré à ${email.trim()}` });
+      res.json({ message: `Rôle admin transféré à ${email.trim()}` });
     } catch (err: any) {
       res.status(404).json({ message: err.message || "Erreur lors du transfert" });
     }

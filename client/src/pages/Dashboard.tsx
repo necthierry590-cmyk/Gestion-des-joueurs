@@ -7,13 +7,12 @@ import { PlayerCard } from "@/components/PlayerCard";
 import { StaffCard } from "@/components/StaffCard";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { StaffDialog } from "@/components/StaffDialog";
+import { AdminManager } from "@/components/AdminManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, Plus, Users, Shield, Briefcase, Calendar, Check, Pencil, UserCog, AlertTriangle } from "lucide-react";
+import { LogOut, Plus, Users, Shield, Briefcase, Calendar, Check, Pencil } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import type { Player } from "@shared/schema";
 import type { StaffMember } from "@shared/schema";
 
@@ -39,25 +38,6 @@ export default function Dashboard() {
 
   const isAdmin = (user as any)?.role === "admin";
   const currentSeason = seasonData?.season || "2025 - 2026";
-
-  const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [confirmTransfer, setConfirmTransfer] = useState(false);
-
-  const transferAdmin = useMutation({
-    mutationFn: (email: string) => apiRequest("POST", "/api/admin/transfer-role", { email }),
-    onSuccess: () => {
-      toast({
-        title: "Administrateur transféré",
-        description: `Le compte ${newAdminEmail} est désormais l'administrateur. Vous allez être déconnecté.`,
-      });
-      setNewAdminEmail("");
-      setConfirmTransfer(false);
-      setTimeout(() => logout.mutate(), 2000);
-    },
-    onError: (err: any) => {
-      toast({ variant: "destructive", title: "Erreur", description: err.message || "Transfert échoué" });
-    },
-  });
 
   const handleCreatePlayer = () => { setEditingPlayer(null); setPlayerDialogOpen(true); };
   const handleEditPlayer = (player: Player) => { setEditingPlayer(player); setPlayerDialogOpen(true); };
@@ -173,62 +153,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Changer l'administrateur */}
-        <div className="mb-6 bg-card border border-border/60 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
-              <UserCog className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-sm">Compte administrateur</h3>
-            <span className="ml-auto text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{user?.email}</span>
-          </div>
-          {!confirmTransfer ? (
-            <div className="flex gap-2">
-              <Input
-                data-testid="input-new-admin-email"
-                type="email"
-                value={newAdminEmail}
-                onChange={e => setNewAdminEmail(e.target.value)}
-                placeholder="Email du nouveau compte admin"
-                className="h-9 text-sm flex-1"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 border-primary/30 text-primary hover:bg-primary/5"
-                disabled={!newAdminEmail.trim()}
-                onClick={() => setConfirmTransfer(true)}
-                data-testid="button-prepare-transfer"
-              >
-                Changer
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-800 dark:text-amber-300">
-                  <strong>{newAdminEmail}</strong> deviendra l'unique administrateur. Vous perdrez immédiatement l'accès au dashboard et serez déconnecté.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="h-9"
-                  disabled={transferAdmin.isPending}
-                  onClick={() => transferAdmin.mutate(newAdminEmail.trim())}
-                  data-testid="button-confirm-transfer"
-                >
-                  {transferAdmin.isPending ? "Transfert…" : "Confirmer le transfert"}
-                </Button>
-                <Button size="sm" variant="ghost" className="h-9" onClick={() => { setConfirmTransfer(false); setNewAdminEmail(""); }}>
-                  Annuler
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Gestion des administrateurs */}
+        <AdminManager />
 
         {/* Onglets + Bouton d'action */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">

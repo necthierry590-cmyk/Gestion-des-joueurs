@@ -14,6 +14,9 @@ export interface IStorage {
   transferAdminRole(newAdminEmail: string): Promise<User>;
   hasAdmin(): Promise<boolean>;
   forceSetAdmin(email: string, password: string): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  setUserRole(id: number, role: string): Promise<User>;
+  createAdminUser(email: string, password: string): Promise<User>;
 
   // Players
   getPlayers(userId: number): Promise<Player[]>;
@@ -89,6 +92,25 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(users).values({ email, password, role: "admin" }).returning();
       return created;
     }
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async setUserRole(id: number, role: string): Promise<User> {
+    const [updated] = await db.update(users).set({ role }).where(eq(users.id, id)).returning();
+    return updated;
+  }
+
+  async createAdminUser(email: string, password: string): Promise<User> {
+    const existing = await this.getUserByEmail(email);
+    if (existing) {
+      const [updated] = await db.update(users).set({ role: "admin", password }).where(eq(users.email, email)).returning();
+      return updated;
+    }
+    const [created] = await db.insert(users).values({ email, password, role: "admin" }).returning();
+    return created;
   }
 
   async getPlayers(userId: number): Promise<Player[]> {
