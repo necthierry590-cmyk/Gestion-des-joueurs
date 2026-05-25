@@ -1,5 +1,19 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+export const API_BASE = import.meta.env.VITE_API_URL ?? "";
+export const TOKEN_KEY = "usp_token";
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...extra };
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -10,15 +24,15 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const fullUrl = `${API_BASE}${url}`;
+  const headers = authHeaders(data ? { "Content-Type": "application/json" } : {});
+  const res = await fetch(fullUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
-
   await throwIfResNotOk(res);
   return res;
 }
@@ -29,9 +43,9 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-    });
+    const path = (queryKey as (string | number)[]).join("/");
+    const url = `${API_BASE}${path}`;
+    const res = await fetch(url, { headers: authHeaders() });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

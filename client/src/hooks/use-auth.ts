@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import { API_BASE, TOKEN_KEY } from "@/lib/queryClient";
 
 type AuthInput = z.infer<typeof api.auth.login.input>;
 
@@ -10,8 +11,15 @@ export function useAuth() {
   const userQuery = useQuery({
     queryKey: [api.auth.me.path],
     queryFn: async () => {
-      const res = await fetch(api.auth.me.path, { credentials: "include" });
-      if (res.status === 401) return null;
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) return null;
+      const res = await fetch(`${API_BASE}${api.auth.me.path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        return null;
+      }
       if (!res.ok) throw new Error("Erreur de récupération de l'utilisateur");
       return api.auth.me.responses[200].parse(await res.json());
     },
@@ -20,17 +28,18 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: AuthInput) => {
-      const res = await fetch(api.auth.login.path, {
+      const res = await fetch(`${API_BASE}${api.auth.login.path}`, {
         method: api.auth.login.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) {
         if (res.status === 401) throw new Error("Identifiants incorrects");
         throw new Error("Erreur de connexion");
       }
-      return api.auth.login.responses[200].parse(await res.json());
+      const result = await res.json();
+      if (result.token) localStorage.setItem(TOKEN_KEY, result.token);
+      return api.auth.login.responses[200].parse(result);
     },
     onSuccess: (user) => {
       queryClient.setQueryData([api.auth.me.path], user);
@@ -39,11 +48,10 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async (data: AuthInput) => {
-      const res = await fetch(api.auth.register.path, {
+      const res = await fetch(`${API_BASE}${api.auth.register.path}`, {
         method: api.auth.register.method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        credentials: "include",
       });
       if (!res.ok) {
         if (res.status === 400) {
@@ -52,7 +60,9 @@ export function useAuth() {
         }
         throw new Error("Erreur d'inscription");
       }
-      return api.auth.register.responses[201].parse(await res.json());
+      const result = await res.json();
+      if (result.token) localStorage.setItem(TOKEN_KEY, result.token);
+      return api.auth.register.responses[201].parse(result);
     },
     onSuccess: (user) => {
       queryClient.setQueryData([api.auth.me.path], user);
@@ -61,15 +71,11 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(api.auth.logout.path, {
-        method: api.auth.logout.method,
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Erreur de déconnexion");
+      localStorage.removeItem(TOKEN_KEY);
     },
     onSuccess: () => {
       queryClient.setQueryData([api.auth.me.path], null);
-      queryClient.clear(); // Clear all cached data on logout
+      queryClient.clear();
     },
   });
 

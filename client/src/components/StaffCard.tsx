@@ -39,7 +39,7 @@ export function StaffCard({ member, onEdit, readOnly = false }: StaffCardProps) 
       <div className="relative bg-gradient-to-br from-primary/10 to-primary/5 p-6 flex items-center gap-4">
         <div className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-background shadow-md flex-shrink-0">
           {member.photoUrl ? (
-            <img src={member.photoUrl} alt={`${member.firstName} ${member.lastName}`} className="w-full h-full object-cover" />
+            <img src={member.photoUrl?.startsWith("http") ? member.photoUrl : `${import.meta.env.VITE_API_URL ?? ""}${member.photoUrl}`} alt={`${member.firstName} ${member.lastName}`} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-primary/10">
               <User className="w-8 h-8 text-primary/40" />

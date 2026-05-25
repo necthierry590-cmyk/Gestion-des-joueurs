@@ -63,7 +63,7 @@ export function PlayerCard({ player, onEdit, readOnly = false }: PlayerCardProps
         <div className="px-6 relative flex justify-between items-end">
           <div className="-mt-12 h-24 w-24 rounded-full border-4 border-card bg-muted overflow-hidden shadow-md flex-shrink-0 bg-white">
             {player.photoUrl ? (
-              <img src={player.photoUrl} alt={`${player.firstName} ${player.lastName}`} className="h-full w-full object-cover" />
+              <img src={player.photoUrl?.startsWith("http") ? player.photoUrl : `${import.meta.env.VITE_API_URL ?? ""}${player.photoUrl}`} alt={`${player.firstName} ${player.lastName}`} className="h-full w-full object-cover" />
             ) : (
               <div className="h-full w-full flex items-center justify-center bg-primary/5 text-primary text-3xl font-display font-bold">
                 {player.firstName[0]}{player.lastName[0]}
