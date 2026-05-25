@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
@@ -43,6 +43,6 @@ waitForPort = 5000
 [userenv.shared]
 SUPABASE_URL = "https://zxwzqeygawjjhmtfjsga.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3pxZXlnYXdqamhtdGZqc2dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MzY3MTgsImV4cCI6MjA5NTMxMjcxOH0.Yvc0hdGIiibKSnnoXx4RbzKv6t7lkNwu3SXpnySIY4w"
-SUPABASE_DATABASE_URL = "postgresql://postgres:ngawinetoundicyrthierry%402026@db.zxwzqeygawjjhmtfjsga.supabase.co:5432/postgres"
+SUPABASE_DATABASE_URL = "postgresql://postgres.zxwzqeygawjjhmtfjsga:ngawinetoundicyrthierry%402026@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
 JWT_SECRET = "usp_jwt_secret_2026_ulcy_sport_pro"
 BACKEND_URL = "https://player-stats-tracker--necthierry590.replit.app"
