@@ -1,28 +1,23 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "@shared/routes";
-import { API_BASE, TOKEN_KEY } from "@/lib/queryClient";
+import { supabase } from "@/lib/supabase";
 
 export function useUpload() {
   return useMutation({
     mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
+      const ext = file.name.split(".").pop() || "bin";
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-      const token = localStorage.getItem(TOKEN_KEY);
-      const headers: Record<string, string> = {};
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const { error } = await supabase.storage
+        .from("uploads")
+        .upload(filename, file, { cacheControl: "3600", upsert: false });
 
-      const res = await fetch(`${API_BASE}${api.upload.create.path}`, {
-        method: api.upload.create.method,
-        body: formData,
-        headers,
-      });
+      if (error) throw new Error(error.message);
 
-      if (!res.ok) {
-        throw new Error("Erreur lors du téléchargement du fichier");
-      }
+      const { data: { publicUrl } } = supabase.storage
+        .from("uploads")
+        .getPublicUrl(filename);
 
-      return api.upload.create.responses[200].parse(await res.json());
+      return { url: publicUrl };
     },
   });
 }

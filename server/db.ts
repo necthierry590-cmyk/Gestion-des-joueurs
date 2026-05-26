@@ -4,13 +4,27 @@ import * as schema from "@shared/schema";
 
 const { Pool } = pg;
 
-const dbUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
-if (!dbUrl) {
+const supabaseUrl = process.env.SUPABASE_DATABASE_URL;
+const directUrl = process.env.DATABASE_URL;
+
+if (!supabaseUrl && !directUrl) {
   throw new Error("SUPABASE_DATABASE_URL or DATABASE_URL must be set.");
 }
 
-export const pool = new Pool({
-  connectionString: dbUrl,
-  ssl: process.env.SUPABASE_DATABASE_URL ? { rejectUnauthorized: false } : undefined,
-});
+let poolConfig: pg.PoolConfig;
+if (supabaseUrl) {
+  const u = new URL(supabaseUrl);
+  poolConfig = {
+    host: u.hostname,
+    port: parseInt(u.port || "5432"),
+    user: decodeURIComponent(u.username),
+    password: decodeURIComponent(u.password),
+    database: u.pathname.slice(1),
+    ssl: { rejectUnauthorized: false },
+  };
+} else {
+  poolConfig = { connectionString: directUrl! };
+}
+
+export const pool = new Pool(poolConfig);
 export const db = drizzle(pool, { schema });

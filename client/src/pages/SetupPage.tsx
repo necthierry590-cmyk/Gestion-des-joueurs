@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Check, AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
+import { supabase } from "@/lib/supabase";
 
 export default function SetupPage() {
   const [email, setEmail] = useState("nectflow48@gmail.com");
@@ -16,26 +17,36 @@ export default function SetupPage() {
     if (!email || !password) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/setup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setStatus("success");
-        setMessage(data.message);
-        setTimeout(() => setLocation("/auth"), 2500);
-      } else if (res.status === 403) {
-        setStatus("done");
-        setMessage("Un administrateur est déjà configuré. Connectez-vous normalement.");
-      } else {
-        setStatus("error");
-        setMessage(data.message || "Erreur inconnue");
+      // 1. Create Supabase Auth account
+      const { error: signUpError } = await supabase.auth.signUp({ email: email.trim(), password });
+      if (signUpError && !signUpError.message.includes("already registered")) {
+        throw new Error(signUpError.message);
       }
-    } catch {
+
+      // 2. Sign in to get authenticated session
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (signInError) {
+        if (signInError.message.includes("Email not confirmed")) {
+          setStatus("success");
+          setMessage("Compte créé — vérifiez votre boîte mail pour confirmer, puis connectez-vous.");
+          return;
+        }
+        throw new Error(signInError.message);
+      }
+
+      // 3. Upsert into users table
+      const { error: upsertError } = await supabase
+        .from("users")
+        .upsert({ email: email.trim(), password, role: "admin", approved: [] }, { onConflict: "email" });
+
+      if (upsertError) throw new Error(upsertError.message);
+
+      setStatus("success");
+      setMessage("Compte admin configuré : " + email.trim());
+      setTimeout(() => setLocation("/"), 2000);
+    } catch (err: any) {
       setStatus("error");
-      setMessage("Impossible de joindre le serveur");
+      setMessage(err.message || "Erreur inconnue");
     }
   };
 
@@ -56,7 +67,7 @@ export default function SetupPage() {
           {status === "success" && (
             <div className="flex items-center gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 mb-4">
               <Check className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm text-green-800 dark:text-green-300 font-medium">{message}<br /><span className="font-normal">Redirection vers la connexion…</span></p>
+              <p className="text-sm text-green-800 dark:text-green-300 font-medium">{message}<br /><span className="font-normal">Redirection…</span></p>
             </div>
           )}
 
@@ -92,7 +103,7 @@ export default function SetupPage() {
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Votre mot de passe"
+                  placeholder="Minimum 6 caractères"
                   className="bg-background"
                   onKeyDown={e => e.key === "Enter" && handleSetup()}
                 />
@@ -105,7 +116,7 @@ export default function SetupPage() {
                 {status === "loading" ? "Configuration…" : "Configurer l'accès admin"}
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Cette page n'est accessible qu'une seule fois, tant qu'aucun admin n'est configuré.
+                Crée le compte admin dans Supabase Auth et la base de données.
               </p>
             </div>
           )}

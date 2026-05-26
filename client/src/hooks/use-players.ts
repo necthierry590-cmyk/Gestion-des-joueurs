@@ -1,95 +1,107 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl } from "@shared/routes";
-import { z } from "zod";
-import type { InsertPlayer, UpdatePlayerRequest } from "@shared/schema";
+import { supabase, toCamel, toSnake } from "@/lib/supabase";
+import { useAuth } from "./use-auth";
+import { addMonths, format } from "date-fns";
+import type { Player, InsertPlayer, UpdatePlayerRequest } from "@shared/schema";
 
 export function usePlayers() {
-  return useQuery({
-    queryKey: [api.players.list.path],
+  const { user } = useAuth();
+  return useQuery<Player[]>({
+    queryKey: ["players", user?.id],
     queryFn: async () => {
-      const res = await fetch(api.players.list.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Erreur de récupération des joueurs");
-      return api.players.list.responses[200].parse(await res.json());
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("players")
+        .select("*")
+        .eq("user_id", user.id);
+      if (error) throw new Error(error.message);
+      return (data || []).map(row => toCamel<Player>(row));
     },
+    enabled: !!user,
   });
 }
 
 export function usePlayer(id: number | null) {
-  return useQuery({
-    queryKey: [api.players.get.path, id],
+  const { user } = useAuth();
+  return useQuery<Player | null>({
+    queryKey: ["player", id],
     queryFn: async () => {
-      if (!id) return null;
-      const url = buildUrl(api.players.get.path, { id });
-      const res = await fetch(url, { credentials: "include" });
-      if (res.status === 404) return null;
-      if (!res.ok) throw new Error("Erreur de récupération du joueur");
-      return api.players.get.responses[200].parse(await res.json());
+      if (!id || !user) return null;
+      const { data, error } = await supabase
+        .from("players")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
+      if (error) return null;
+      return toCamel<Player>(data);
     },
-    enabled: !!id,
+    enabled: !!id && !!user,
   });
 }
 
 export function useCreatePlayer() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (data: InsertPlayer) => {
-      const res = await fetch(api.players.create.path, {
-        method: api.players.create.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (res.status === 400) {
-          const err = await res.json();
-          throw new Error(err.message || "Erreur de validation");
-        }
-        throw new Error("Erreur lors de la création");
-      }
-      return api.players.create.responses[201].parse(await res.json());
+      if (!user) throw new Error("Non authentifié");
+      const startDate = new Date(data.contractStartDate);
+      const contractEndDate = format(addMonths(startDate, data.contractDurationMonths), "yyyy-MM-dd");
+      const insertData = toSnake({ ...data, userId: user.id, contractEndDate });
+      const { data: player, error } = await supabase
+        .from("players")
+        .insert(insertData)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return toCamel<Player>(player);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.players.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["players"] });
     },
   });
 }
 
 export function useUpdatePlayer() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: UpdatePlayerRequest }) => {
-      const url = buildUrl(api.players.update.path, { id });
-      const res = await fetch(url, {
-        method: api.players.update.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      if (!res.ok) {
-        throw new Error("Erreur lors de la mise à jour");
-      }
-      return api.players.update.responses[200].parse(await res.json());
+      if (!user) throw new Error("Non authentifié");
+      const updateData = toSnake(data as Record<string, any>);
+      const { data: player, error } = await supabase
+        .from("players")
+        .update(updateData)
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return toCamel<Player>(player);
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: [api.players.list.path] });
-      queryClient.invalidateQueries({ queryKey: [api.players.get.path, id] });
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+      queryClient.invalidateQueries({ queryKey: ["player", id] });
     },
   });
 }
 
 export function useDeletePlayer() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (id: number) => {
-      const url = buildUrl(api.players.delete.path, { id });
-      const res = await fetch(url, {
-        method: api.players.delete.method,
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Erreur lors de la suppression");
+      if (!user) throw new Error("Non authentifié");
+      const { error } = await supabase
+        .from("players")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.players.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["players"] });
     },
   });
 }

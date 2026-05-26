@@ -4,6 +4,7 @@ import { PlayerCard } from "@/components/PlayerCard";
 import { StaffCard } from "@/components/StaffCard";
 import { Eye, Users, Briefcase } from "lucide-react";
 import type { Player, StaffMember } from "@shared/schema";
+import { supabase, toCamel } from "@/lib/supabase";
 
 type Tab = "joueurs" | "staff";
 
@@ -11,15 +12,29 @@ export default function VisitorsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("joueurs");
 
   const { data: players, isLoading: loadingPlayers } = useQuery<Player[]>({
-    queryKey: ["/api/players/all"],
+    queryKey: ["players-all-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("players").select("*");
+      if (error) throw new Error(error.message);
+      return (data || []).map(row => toCamel<Player>(row));
+    },
   });
 
   const { data: staffMembers, isLoading: loadingStaff } = useQuery<StaffMember[]>({
-    queryKey: ["/api/staff/all"],
+    queryKey: ["staff-all-public"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("staff").select("*");
+      if (error) throw new Error(error.message);
+      return (data || []).map(row => toCamel<StaffMember>(row));
+    },
   });
 
   const { data: seasonData } = useQuery<{ season: string }>({
-    queryKey: ["/api/settings/season"],
+    queryKey: ["settings-season-public"],
+    queryFn: async () => {
+      const { data } = await supabase.from("settings").select("value").eq("key", "season").single();
+      return { season: data?.value || "2025 - 2026" };
+    },
   });
 
   const currentSeason = seasonData?.season || "2025 - 2026";
@@ -39,7 +54,6 @@ export default function VisitorsPage() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Onglets */}
         <div className="flex gap-2 mb-8 bg-muted/50 p-1 rounded-xl w-fit">
           <button
             onClick={() => setActiveTab("joueurs")}
@@ -75,7 +89,6 @@ export default function VisitorsPage() {
           </button>
         </div>
 
-        {/* Contenu des onglets */}
         {activeTab === "joueurs" && (
           <section>
             <div className="mb-6">
