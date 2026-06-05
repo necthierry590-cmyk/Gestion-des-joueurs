@@ -7,6 +7,6 @@
   "env": {
     "VITE_API_URL": "https://player-stats-tracker--necthierry590.replit.app",
     "VITE_SUPABASE_URL": "https://zxwzqeygawjjhmtfjsga.supabase.co",
-    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3pxZXlnYXdqamhtdGZqc2dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyMTk0NDcsImV4cCI6MjA2Mjc5NTQ0N30.c4g-yD5ERGBUj9ZDnMXmJLtBwJXLePWCkLnMtfhB_cA"
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4d3pxZXlnYXdqamhtdGZqc2dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MzY3MTgsImV4cCI6MjA5NTMxMjcxOH0.Yvc0hdGIiibKSnnoXx4RbzKv6t7lkNwu3SXpnySIY4w"
   }
 }
