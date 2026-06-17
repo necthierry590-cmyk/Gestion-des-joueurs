@@ -19,6 +19,28 @@ export const PLAN_LIMITS = {
   premium: { players: Infinity, admins: Infinity, documents: true },
 };
 
+async function fetchClubForUser(email: string, clubId?: number | null): Promise<Club | null> {
+  try {
+    if (clubId) {
+      const { data } = await supabase.from("clubs").select("*").eq("id", clubId).single();
+      if (data) return data as Club;
+    }
+    const { data } = await supabase.from("clubs").select("*").eq("owner_email", email).single();
+    return (data as Club) || null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchUserProfile(email: string): Promise<User | null> {
+  try {
+    const { data } = await supabase.from("users").select("*").eq("email", email).single();
+    return data ? toCamel<User>(data) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
@@ -32,63 +54,57 @@ export function useAuth() {
   const userQuery = useQuery<UserWithClub | null>({
     queryKey: ["auth-user"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user?.email) return null;
 
-      const { data: profile } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", user.email)
-        .single();
-
-      if (!profile) return null;
-
-      const userObj = toCamel<User>(profile);
-
-      // Fetch club if club_id is set
-      let club: Club | null = null;
-      if (profile.club_id) {
-        const { data: clubData } = await supabase
-          .from("clubs")
-          .select("*")
-          .eq("id", profile.club_id)
-          .single();
-        if (clubData) club = clubData as Club;
-      } else if (user.email) {
-        // Try to find club by owner_email
-        const { data: clubData } = await supabase
-          .from("clubs")
-          .select("*")
-          .eq("owner_email", user.email)
-          .single();
-        if (clubData) club = clubData as Club;
+      const profile = await fetchUserProfile(user.email);
+      if (!profile) {
+        // User authenticated with Supabase but no DB profile yet — return minimal user
+        return {
+          id: 0,
+          email: user.email,
+          password: "",
+          role: "admin",
+          approved: [],
+          club: null,
+        } as unknown as UserWithClub;
       }
 
-      return { ...userObj, club };
+      const club = await fetchClubForUser(user.email, (profile as any).clubId);
+      return { ...profile, club };
     },
     retry: false,
+    staleTime: 30_000,
   });
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+
       if (error) {
-        if (error.message === "Invalid login credentials") throw new Error("Identifiants incorrects");
-        if (error.message.includes("Email not confirmed")) throw new Error("Email non confirmé — vérifiez votre boîte mail.");
-        throw new Error(error.message);
+        const msg = error.message || "";
+        if (msg.includes("Invalid login credentials")) throw new Error("Email ou mot de passe incorrect.");
+        if (msg.includes("Email not confirmed")) throw new Error("Confirmez votre email avant de vous connecter.");
+        if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) throw new Error("Erreur réseau — vérifiez votre connexion internet.");
+        throw new Error(msg || "Erreur de connexion.");
       }
-      const { data: profile } = await supabase.from("users").select("*").eq("email", email).single();
-      if (!profile) return null;
-      const userObj = toCamel<User>(profile);
-      let club: Club | null = null;
-      if (profile.club_id) {
-        const { data: clubData } = await supabase.from("clubs").select("*").eq("id", profile.club_id).single();
-        if (clubData) club = clubData as Club;
-      } else {
-        const { data: clubData } = await supabase.from("clubs").select("*").eq("owner_email", email).single();
-        if (clubData) club = clubData as Club;
+
+      if (!authData.user?.email) throw new Error("Erreur de connexion — réessayez.");
+
+      const profile = await fetchUserProfile(authData.user.email);
+      if (!profile) {
+        return {
+          id: 0,
+          email: authData.user.email,
+          password: "",
+          role: "admin",
+          approved: [],
+          club: null,
+        } as unknown as UserWithClub;
       }
-      return { ...userObj, club };
+
+      const club = await fetchClubForUser(authData.user.email, (profile as any).clubId);
+      return { ...profile, club };
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["auth-user"], user);
@@ -97,14 +113,31 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw new Error(error.message);
-      const { data: existing } = await supabase.from("users").select("id").eq("email", email).single();
-      if (!existing) {
-        await supabase.from("users").insert({ email, password, role: "admin", approved: [] });
+      const { data: authData, error } = await supabase.auth.signUp({ email, password });
+
+      if (error) {
+        const msg = error.message || "";
+        if (msg.includes("already registered")) throw new Error("Cet email est déjà utilisé.");
+        if (msg.includes("Failed to fetch") || msg.includes("NetworkError")) throw new Error("Erreur réseau — vérifiez votre connexion internet.");
+        throw new Error(msg || "Erreur lors de l'inscription.");
       }
-      const { data: profile } = await supabase.from("users").select("*").eq("email", email).single();
-      return profile ? toCamel<User>(profile) : null;
+
+      // Try to create DB profile (non-blocking)
+      try {
+        const existing = await supabase.from("users").select("id").eq("email", email).single();
+        if (!existing.data) {
+          await supabase.from("users").insert({ email, password, role: "admin", approved: [] });
+        }
+      } catch { /* table may not exist yet — ignore */ }
+
+      return {
+        id: 0,
+        email: authData.user?.email || email,
+        password: "",
+        role: "admin",
+        approved: [],
+        club: null,
+      } as unknown as UserWithClub;
     },
     onSuccess: (user) => {
       queryClient.setQueryData(["auth-user"], user);
@@ -114,7 +147,6 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       await supabase.auth.signOut();
-      localStorage.removeItem("usp_token");
     },
     onSuccess: () => {
       queryClient.setQueryData(["auth-user"], null);
