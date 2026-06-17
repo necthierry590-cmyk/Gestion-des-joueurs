@@ -9,46 +9,67 @@ import { PlayerDialog } from "@/components/PlayerDialog";
 import { StaffDialog } from "@/components/StaffDialog";
 import { AdminManager } from "@/components/AdminManager";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { LogOut, Plus, Users, Shield, Briefcase, Calendar, Check, Pencil } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  LogOut, Plus, Users, Shield, Briefcase, Calendar,
+  Check, Pencil, Building2, Crown, Lock, Trophy
+} from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import type { Player } from "@shared/schema";
-import type { StaffMember } from "@shared/schema";
+import type { Player, StaffMember } from "@shared/schema";
 
 type Tab = "joueurs" | "staff";
 
+const PLAN_BADGE: Record<string, { label: string; className: string }> = {
+  gratuit: { label: "Gratuit", className: "bg-muted text-muted-foreground border-border" },
+  pro: { label: "Pro", className: "bg-accent/10 text-accent border-accent/30" },
+  premium: { label: "Premium", className: "bg-primary/10 text-primary border-primary/30" },
+};
+
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, club, plan, limits, logout } = useAuth();
   const { data: players, isLoading: loadingPlayers } = usePlayers();
   const { data: staffMembers, isLoading: loadingStaff } = useStaff();
   const { data: seasonData } = useSeason();
   const updateSeason = useUpdateSeason();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
   const [activeTab, setActiveTab] = useState<Tab>("joueurs");
   const [editingSeason, setEditingSeason] = useState(false);
   const [seasonInput, setSeasonInput] = useState("");
-
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
-
   const [staffDialogOpen, setStaffDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
 
   const isAdmin = (user as any)?.role === "admin";
+  const isSuperAdmin = user?.email === "nectflow48@gmail.com";
   const currentSeason = seasonData?.season || "2025 - 2026";
 
-  const handleCreatePlayer = () => { setEditingPlayer(null); setPlayerDialogOpen(true); };
-  const handleEditPlayer = (player: Player) => { setEditingPlayer(player); setPlayerDialogOpen(true); };
+  const playerCount = players?.length || 0;
+  const playerLimit = limits.players;
+  const atPlayerLimit = playerCount >= playerLimit;
+  const planBadge = PLAN_BADGE[plan] || PLAN_BADGE.gratuit;
 
+  const handleCreatePlayer = () => {
+    if (atPlayerLimit) {
+      toast({
+        variant: "destructive",
+        title: `Limite atteinte (${playerCount}/${playerLimit === Infinity ? "∞" : playerLimit})`,
+        description: plan === "gratuit"
+          ? "Passez au plan Pro pour ajouter jusqu'à 50 joueurs."
+          : "Passez au plan Premium pour des joueurs illimités.",
+      });
+      return;
+    }
+    setEditingPlayer(null);
+    setPlayerDialogOpen(true);
+  };
+
+  const handleEditPlayer = (player: Player) => { setEditingPlayer(player); setPlayerDialogOpen(true); };
   const handleCreateStaff = () => { setEditingStaff(null); setStaffDialogOpen(true); };
   const handleEditStaff = (member: StaffMember) => { setEditingStaff(member); setStaffDialogOpen(true); };
-
-  const handleStartEditSeason = () => {
-    setSeasonInput(currentSeason);
-    setEditingSeason(true);
-  };
 
   const handleSaveSeason = async () => {
     if (!seasonInput.trim()) return;
@@ -61,7 +82,6 @@ export default function Dashboard() {
     }
   };
 
-  // Bloquer l'accès aux non-admins
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -71,7 +91,7 @@ export default function Dashboard() {
           </div>
           <h1 className="text-2xl font-display font-bold mb-2">Accès réservé</h1>
           <p className="text-muted-foreground mb-6">
-            Ce tableau de bord est réservé au compte administrateur. Contactez l'administrateur actuel pour obtenir les droits d'accès.
+            Ce tableau de bord est réservé aux administrateurs. Contactez votre administrateur pour obtenir les droits d'accès.
           </p>
           <Button variant="outline" onClick={() => logout.mutate()}>
             <LogOut className="w-4 h-4 mr-2" />
@@ -84,24 +104,53 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* Header */}
       <header className="bg-card/80 backdrop-blur-md border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-primary">
+          <div className="flex items-center gap-3">
             <div className="bg-primary text-primary-foreground p-2 rounded-lg">
-              <Users className="w-5 h-5" />
+              <Trophy className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-display font-bold tracking-tight">UlcySportPro <span className="text-primary/60 font-normal text-base">(USP)</span></h1>
+            <div>
+              <h1 className="text-base font-display font-bold leading-tight">
+                {club?.name || "UlcySportPro"}
+              </h1>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium capitalize ${planBadge.className}`}>
+                  {planBadge.label}
+                </span>
+                {plan !== "premium" && (
+                  <button
+                    onClick={() => setLocation("/subscription")}
+                    className="text-[10px] text-accent hover:text-accent/80 font-medium transition-colors"
+                  >
+                    Upgrade →
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground hidden sm:block">{user?.email}</span>
+            {isSuperAdmin && (
+              <Button variant="ghost" size="sm" onClick={() => setLocation("/superadmin")} className="text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/20">
+                <Crown className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Super Admin</span>
+              </Button>
+            )}
             {isAdmin && (
               <Button variant="ghost" size="sm" onClick={() => setLocation("/admin")} className="text-primary hover:bg-primary/10">
                 <Shield className="w-4 h-4 mr-1" />
-                Admin
+                <span className="hidden sm:inline">Admin</span>
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => logout.mutate()} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => logout.mutate()}
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
               <LogOut className="w-5 h-5" />
             </Button>
           </div>
@@ -109,54 +158,80 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Widget Saison */}
-        <div className="flex items-center gap-3 mb-6 bg-card border border-border/60 rounded-2xl px-5 py-3 w-fit shadow-sm">
-          <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
-            <Calendar className="w-4 h-4" />
-          </div>
-          <span className="text-sm text-muted-foreground font-medium">Saison :</span>
-          {editingSeason ? (
-            <div className="flex items-center gap-2">
-              <Input
-                data-testid="input-season"
-                value={seasonInput}
-                onChange={e => setSeasonInput(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") handleSaveSeason(); if (e.key === "Escape") setEditingSeason(false); }}
-                className="h-7 w-36 text-sm font-bold px-2"
-                placeholder="2025 - 2026"
-                autoFocus
-              />
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleSaveSeason}
-                disabled={updateSeason.isPending}
-                className="h-7 w-7 p-0 text-green-600 hover:bg-green-50"
-                data-testid="button-save-season"
-              >
-                <Check className="w-4 h-4" />
-              </Button>
+        {/* Bannière upgrade si plan gratuit */}
+        {plan === "gratuit" && (
+          <div className="mb-6 bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20 rounded-2xl px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Crown className="w-5 h-5 text-accent flex-shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Vous êtes sur le plan Gratuit</p>
+                <p className="text-xs text-muted-foreground">
+                  {playerCount}/{playerLimit} joueurs utilisés · Passez Pro pour 50 joueurs, documents et plus.
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-foreground text-sm" data-testid="text-current-season">{currentSeason}</span>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleStartEditSeason}
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
-                data-testid="button-edit-season"
-              >
-                <Pencil className="w-3 h-3" />
-              </Button>
+            <Button size="sm" className="bg-accent hover:bg-accent/90 text-white font-bold flex-shrink-0" onClick={() => setLocation("/subscription")}>
+              <Crown className="w-4 h-4 mr-1.5" />
+              Passer Pro — 15 000 XAF/mois
+            </Button>
+          </div>
+        )}
+
+        {/* Widget Club + Saison */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          {club && (
+            <div className="flex items-center gap-2 bg-card border border-border/60 rounded-2xl px-4 py-2.5 shadow-sm">
+              <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-semibold">{club.name}</span>
             </div>
           )}
+
+          <div className="flex items-center gap-3 bg-card border border-border/60 rounded-2xl px-4 py-2.5 shadow-sm">
+            <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <span className="text-sm text-muted-foreground font-medium">Saison :</span>
+            {editingSeason ? (
+              <div className="flex items-center gap-2">
+                <input
+                  data-testid="input-season"
+                  value={seasonInput}
+                  onChange={e => setSeasonInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleSaveSeason(); if (e.key === "Escape") setEditingSeason(false); }}
+                  className="h-7 w-36 text-sm font-bold px-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="2025 - 2026"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveSeason}
+                  disabled={updateSeason.isPending}
+                  className="h-7 w-7 flex items-center justify-center text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 rounded-lg transition-colors"
+                  data-testid="button-save-season"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground text-sm" data-testid="text-current-season">{currentSeason}</span>
+                <button
+                  onClick={() => { setSeasonInput(currentSeason); setEditingSeason(true); }}
+                  className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-primary rounded-lg transition-colors"
+                  data-testid="button-edit-season"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Gestion des administrateurs */}
         <AdminManager />
 
-        {/* Onglets + Bouton d'action */}
+        {/* Onglets + bouton action */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="flex gap-2 bg-muted/50 p-1 rounded-xl">
             <button
@@ -170,8 +245,10 @@ export default function Dashboard() {
               <Users className="w-4 h-4" />
               Joueurs
               {players && (
-                <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-bold">
-                  {players.length}
+                <span className={`ml-1 px-2 py-0.5 text-xs rounded-full font-bold ${
+                  atPlayerLimit ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                }`}>
+                  {playerCount}/{playerLimit === Infinity ? "∞" : playerLimit}
                 </span>
               )}
             </button>
@@ -195,10 +272,18 @@ export default function Dashboard() {
 
           <Button
             onClick={activeTab === "joueurs" ? handleCreatePlayer : handleCreateStaff}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:-translate-y-0.5"
+            className={`shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 ${
+              activeTab === "joueurs" && atPlayerLimit
+                ? "bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed"
+                : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+            }`}
+            data-testid={`button-add-${activeTab === "joueurs" ? "player" : "staff"}`}
           >
-            <Plus className="w-5 h-5 mr-2" />
-            {activeTab === "joueurs" ? "Nouveau Joueur" : "Nouveau Membre Staff"}
+            {activeTab === "joueurs" && atPlayerLimit ? (
+              <><Lock className="w-4 h-4 mr-2" />Limite atteinte</>
+            ) : (
+              <><Plus className="w-5 h-5 mr-2" />{activeTab === "joueurs" ? "Nouveau Joueur" : "Nouveau Membre Staff"}</>
+            )}
           </Button>
         </div>
 

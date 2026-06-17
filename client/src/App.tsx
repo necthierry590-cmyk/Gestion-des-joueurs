@@ -5,24 +5,24 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/AuthPage";
-import HomePage from "@/pages/HomePage";
+import LandingPage from "@/pages/LandingPage";
 import Dashboard from "@/pages/Dashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import VisitorsPage from "@/pages/VisitorsPage";
 import SetupPage from "@/pages/SetupPage";
+import RegisterPage from "@/pages/RegisterPage";
+import SuperAdminPage from "@/pages/SuperAdminPage";
+import SubscriptionPage from "@/pages/SubscriptionPage";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
-// Protect routes that require authentication
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      setLocation("/auth");
-    }
+    if (!isLoading && !user) setLocation("/auth");
   }, [user, isLoading, setLocation]);
 
   if (isLoading) {
@@ -34,13 +34,12 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }
 
   if (!user) return null;
-
   return <Component />;
 }
 
 function RootRoute() {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -48,12 +47,9 @@ function RootRoute() {
       </div>
     );
   }
-  
-  if (user) {
-    return <Dashboard />;
-  }
-  
-  return <HomePage />;
+
+  if (user) return <Dashboard />;
+  return <LandingPage />;
 }
 
 function Router() {
@@ -61,10 +57,18 @@ function Router() {
     <Switch>
       <Route path="/setup" component={SetupPage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/register" component={RegisterPage} />
+      <Route path="/landing" component={LandingPage} />
+      <Route path="/visitors" component={VisitorsPage} />
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminPanel} />}
       </Route>
-      <Route path="/visitors" component={VisitorsPage} />
+      <Route path="/superadmin">
+        {() => <ProtectedRoute component={SuperAdminPage} />}
+      </Route>
+      <Route path="/subscription">
+        {() => <ProtectedRoute component={SubscriptionPage} />}
+      </Route>
       <Route path="/">
         {() => <RootRoute />}
       </Route>
