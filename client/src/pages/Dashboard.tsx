@@ -8,18 +8,18 @@ import { StaffCard } from "@/components/StaffCard";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { StaffDialog } from "@/components/StaffDialog";
 import { AdminManager } from "@/components/AdminManager";
-import { NewsFeed } from "@/components/NewsFeed";
+import { PlayerHealthPanel } from "@/components/PlayerHealthPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, Plus, Users, Shield, Briefcase, Calendar,
-  Check, Pencil, Building2, Crown, Lock, Trophy, Newspaper
+  Check, Pencil, Building2, Crown, Lock, Trophy, Heart
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { Player, StaffMember } from "@shared/schema";
 
-type Tab = "joueurs" | "staff" | "actualites";
+type Tab = "joueurs" | "staff" | "sante";
 
 const PLAN_BADGE: Record<string, { label: string; className: string }> = {
   gratuit: { label: "Gratuit", className: "bg-muted text-muted-foreground border-border" },
@@ -37,6 +37,7 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>("joueurs");
+
   const [editingSeason, setEditingSeason] = useState(false);
   const [seasonInput, setSeasonInput] = useState("");
   const [playerDialogOpen, setPlayerDialogOpen] = useState(false);
@@ -270,21 +271,20 @@ export default function Dashboard() {
               )}
             </button>
             <button
-              onClick={() => setActiveTab("actualites")}
+              onClick={() => setActiveTab("sante")}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
-                activeTab === "actualites"
+                activeTab === "sante"
                   ? "bg-card shadow text-primary border border-border/50"
                   : "text-muted-foreground hover:text-foreground"
               }`}
-              data-testid="tab-actualites"
+              data-testid="tab-sante"
             >
-              <Newspaper className="w-4 h-4" />
-              Actualités
-              <span className="ml-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+              <Heart className="w-4 h-4" />
+              Santé
             </button>
           </div>
 
-          {activeTab !== "actualites" && (
+          {activeTab !== "sante" && (
             <Button
               onClick={activeTab === "joueurs" ? handleCreatePlayer : handleCreateStaff}
               className={`shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 ${
@@ -359,9 +359,9 @@ export default function Dashboard() {
           </>
         )}
 
-        {/* Contenu onglet Actualités */}
-        {activeTab === "actualites" && (
-          <NewsFeed players={players} />
+        {/* Contenu onglet Santé */}
+        {activeTab === "sante" && (
+          <PlayerHealthPanel players={players} />
         )}
       </main>
 

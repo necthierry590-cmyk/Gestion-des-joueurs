@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield, Users, Building2, LogOut, CheckCircle, XCircle,
-  TrendingUp, Trophy, Loader2, UserCheck, UserX, Crown,
+  Trophy, Loader2, UserCheck, UserX, Crown,
   Mail, Calendar, Key
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -127,18 +127,6 @@ export default function SuperAdminPage() {
     onError: (err: any) => toast({ variant: "destructive", title: "Erreur", description: err.message }),
   });
 
-  const changePlan = useMutation({
-    mutationFn: async ({ id, plan }: { id: number; plan: string }) => {
-      const { error } = await supabase.from("clubs").update({ plan }).eq("id", id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sa-clubs"] });
-      queryClient.invalidateQueries({ queryKey: ["sa-admins"] });
-      toast({ title: "Plan mis à jour" });
-    },
-  });
-
   const activateClubByEmail = useMutation({
     mutationFn: async ({ email, enable }: { email: string; enable: boolean }) => {
       // Find club for this admin email
@@ -188,7 +176,6 @@ export default function SuperAdminPage() {
   /* ─── STATS ─────────────────────────────────────────────── */
   const totalClubs = clubs?.length || 0;
   const activeClubs = clubs?.filter(c => c.status === "active").length || 0;
-  const paidClubs = clubs?.filter(c => c.plan === "pro" || c.plan === "premium").length || 0;
   const totalPlayers = clubs?.reduce((s, c) => s + (c.player_count || 0), 0) || 0;
   const totalAdmins = admins?.length || 0;
   const activeAdmins = admins?.filter(a => a.login_enabled).length || 0;
@@ -225,11 +212,10 @@ export default function SuperAdminPage() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* Stats globales */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {[
             { label: "Clubs total", value: totalClubs, icon: Building2, color: "text-primary bg-primary/10" },
             { label: "Clubs actifs", value: activeClubs, icon: CheckCircle, color: "text-green-600 bg-green-50 dark:bg-green-950/30" },
-            { label: "Plans payants", value: paidClubs, icon: TrendingUp, color: "text-accent bg-accent/10" },
             { label: "Joueurs total", value: totalPlayers, icon: Users, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30" },
             { label: "Admins total", value: totalAdmins, icon: UserCheck, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
             { label: "Admins actifs", value: activeAdmins, icon: Key, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
@@ -310,16 +296,6 @@ export default function SuperAdminPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <select
-                        value={club.plan}
-                        onChange={e => changePlan.mutate({ id: club.id, plan: e.target.value })}
-                        className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
-                        data-testid={`select-plan-${club.id}`}
-                      >
-                        <option value="gratuit">Gratuit</option>
-                        <option value="pro">Pro</option>
-                        <option value="premium">Premium</option>
-                      </select>
                       <Button
                         variant={club.status === "active" ? "destructive" : "outline"}
                         size="sm"

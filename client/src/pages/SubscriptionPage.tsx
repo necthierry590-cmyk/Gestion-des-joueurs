@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Check, Smartphone, Loader2, Trophy, AlertCircle, Crown } from "lucide-react";
+import { ArrowLeft, Check, Smartphone, Loader2, Trophy, Crown, Copy, CheckCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const PLANS = [
@@ -16,6 +16,7 @@ const PLANS = [
     name: "Gratuit",
     price: 0,
     color: "border-border",
+    badge: "",
     features: ["15 joueurs max", "1 administrateur", "Statistiques de base"],
   },
   {
@@ -23,21 +24,45 @@ const PLANS = [
     name: "Pro",
     price: 15000,
     color: "border-accent",
-    features: ["50 joueurs", "3 administrateurs", "Documents & contrats", "Staff illimité", "Support prioritaire"],
+    badge: "Populaire",
+    features: ["50 joueurs", "3 administrateurs", "Documents & contrats", "Staff illimité", "Santé médicale", "Support prioritaire"],
   },
   {
     id: "premium",
     name: "Premium",
     price: 35000,
     color: "border-primary",
+    badge: "Complet",
     features: ["Joueurs illimités", "Admins illimités", "Tout inclus", "Support dédié 24/7"],
   },
 ];
 
 const OPERATORS = [
-  { id: "moov", name: "Moov Money", emoji: "📱" },
-  { id: "airtel", name: "Airtel Money", emoji: "📲" },
+  {
+    id: "moov",
+    name: "Moov Money",
+    shortCode: "#150#",
+    menuPath: "1 → 1 (Payer une facture) → Saisir le code marchand",
+    color: "border-blue-400 bg-blue-50 dark:bg-blue-950/30",
+    activeColor: "border-blue-500 bg-blue-100 dark:bg-blue-900/40",
+    textColor: "text-blue-700 dark:text-blue-300",
+    logo: "M",
+    logoColor: "bg-blue-500",
+  },
+  {
+    id: "airtel",
+    name: "Airtel Money",
+    shortCode: "*500#",
+    menuPath: "4 (Paiement) → 1 (Marchand) → Saisir le code USP",
+    color: "border-red-400 bg-red-50 dark:bg-red-950/30",
+    activeColor: "border-red-500 bg-red-100 dark:bg-red-900/40",
+    textColor: "text-red-700 dark:text-red-300",
+    logo: "A",
+    logoColor: "bg-red-500",
+  },
 ];
+
+const MERCHANT_CODE = "USP-2025";
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
@@ -49,6 +74,8 @@ export default function SubscriptionPage() {
   const [selectedOperator, setSelectedOperator] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [step, setStep] = useState<"plans" | "payment" | "pending" | "success">("plans");
+  const [reference, setReference] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const { data: club, isLoading } = useQuery({
     queryKey: ["my-club-sub", user?.email],
@@ -83,17 +110,33 @@ export default function SubscriptionPage() {
       if (error) throw new Error(error.message);
       return ref;
     },
-    onSuccess: () => {
+    onSuccess: (ref) => {
+      setReference(ref);
       setStep("pending");
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["my-club-sub"] });
         setStep("success");
-      }, 2000);
+      }, 1500);
     },
     onError: (err: any) => {
       toast({ variant: "destructive", title: "Erreur", description: err.message });
     },
   });
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    return digits;
+  };
+
+  const selectedOp = OPERATORS.find(o => o.id === selectedOperator);
+  const selectedPlanObj = PLANS.find(p => p.id === selectedPlan);
 
   if (isLoading) {
     return (
@@ -133,21 +176,36 @@ export default function SubscriptionPage() {
           </div>
         )}
 
+        {/* ── SUCCÈS ── */}
         {step === "success" && (
-          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center">
-            <Crown className="w-12 h-12 text-green-600 mx-auto mb-4" />
-            <h2 className="text-xl font-display font-bold mb-2 text-green-800 dark:text-green-300">
+          <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded-2xl p-8 text-center space-y-4">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mx-auto">
+              <Crown className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-xl font-display font-bold text-green-800 dark:text-green-300">
               Demande enregistrée !
             </h2>
-            <p className="text-green-700 dark:text-green-400 mb-6">
-              Votre paiement a été enregistré. Notre équipe va vérifier et activer votre plan <strong>{selectedPlan}</strong> sous 24h.
+            <p className="text-green-700 dark:text-green-400 max-w-sm mx-auto">
+              Votre paiement pour le plan <strong>{selectedPlanObj?.name}</strong> est en cours de vérification. Votre plan sera activé sous <strong>24h</strong>.
             </p>
-            <Button onClick={() => setLocation("/")} className="font-bold">
+            {reference && (
+              <div className="bg-white dark:bg-green-950/50 border border-green-300 dark:border-green-700 rounded-xl px-4 py-3 inline-block">
+                <p className="text-xs text-green-700 dark:text-green-400 mb-1">Référence de paiement</p>
+                <div className="flex items-center gap-2">
+                  <code className="font-mono font-bold text-green-800 dark:text-green-300 text-sm">{reference}</code>
+                  <button onClick={() => handleCopy(reference)} className="text-green-600 hover:text-green-700">
+                    {copied ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+            <Button onClick={() => setLocation("/")} className="font-bold mt-2">
               Retour au dashboard
             </Button>
           </div>
         )}
 
+        {/* ── CHARGEMENT ── */}
         {step === "pending" && (
           <div className="text-center py-20">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
@@ -155,10 +213,11 @@ export default function SubscriptionPage() {
           </div>
         )}
 
+        {/* ── PLANS + PAIEMENT ── */}
         {(step === "plans" || step === "payment") && (
           <>
             <h2 className="font-display font-bold text-2xl mb-2">Choisissez votre plan</h2>
-            <p className="text-muted-foreground mb-6">Paiement par Mobile Money en XAF.</p>
+            <p className="text-muted-foreground mb-6">Paiement par Mobile Money en XAF · Activation sous 24h.</p>
 
             <div className="grid md:grid-cols-3 gap-4 mb-8">
               {PLANS.map(plan => (
@@ -170,10 +229,15 @@ export default function SubscriptionPage() {
                     else setStep("plans");
                   }}
                   data-testid={`button-select-plan-${plan.id}`}
-                  className={`text-left p-6 rounded-2xl border-2 transition-all hover:shadow-md ${
+                  className={`text-left p-6 rounded-2xl border-2 transition-all hover:shadow-md relative ${
                     selectedPlan === plan.id ? "border-primary bg-primary/5 shadow-md" : `${plan.color} bg-card hover:shadow-sm`
                   } ${club?.plan === plan.id ? "ring-2 ring-green-400 ring-offset-2" : ""}`}
                 >
+                  {plan.badge && (
+                    <span className="absolute -top-2.5 left-4 text-xs font-bold px-2 py-0.5 bg-accent text-white rounded-full">
+                      {plan.badge}
+                    </span>
+                  )}
                   <div className="flex items-center justify-between mb-3">
                     <span className="font-display font-bold text-lg">{plan.name}</span>
                     {club?.plan === plan.id && (
@@ -182,6 +246,7 @@ export default function SubscriptionPage() {
                   </div>
                   <p className="text-2xl font-bold mb-4">
                     {plan.price === 0 ? "Gratuit" : `${plan.price.toLocaleString("fr-FR")} XAF`}
+                    {plan.price > 0 && <span className="text-sm font-normal text-muted-foreground">/mois</span>}
                   </p>
                   <ul className="space-y-2">
                     {plan.features.map(f => (
@@ -195,27 +260,27 @@ export default function SubscriptionPage() {
               ))}
             </div>
 
-            {step === "payment" && selectedPlan && PLANS.find(p => p.id === selectedPlan)!.price > 0 && (
-              <div className="bg-card border border-border/60 rounded-2xl p-8">
-                <h3 className="font-display font-bold text-xl mb-1 flex items-center gap-2">
-                  <Smartphone className="w-5 h-5 text-accent" />
-                  Paiement Mobile Money
-                </h3>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Plan <strong>{PLANS.find(p => p.id === selectedPlan)?.name}</strong> —{" "}
-                  <strong>{PLANS.find(p => p.id === selectedPlan)?.price.toLocaleString("fr-FR")} XAF/mois</strong>
-                </p>
-
-                <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-6 text-sm">
-                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-amber-800 dark:text-amber-300">
-                    Votre demande sera traitée manuellement. Un email de confirmation vous sera envoyé avec les instructions de paiement. Votre plan sera activé sous 24h.
+            {/* ── FORMULAIRE PAIEMENT ── */}
+            {step === "payment" && selectedPlanObj && selectedPlanObj.price > 0 && (
+              <div className="bg-card border border-border/60 rounded-2xl overflow-hidden">
+                <div className="px-6 py-5 border-b border-border/60 bg-gradient-to-r from-primary/5 to-accent/5">
+                  <h3 className="font-display font-bold text-xl flex items-center gap-2">
+                    <Smartphone className="w-5 h-5 text-primary" />
+                    Paiement Mobile Money
+                  </h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Plan <strong>{selectedPlanObj.name}</strong> —{" "}
+                    <strong>{selectedPlanObj.price.toLocaleString("fr-FR")} XAF/mois</strong>
                   </p>
                 </div>
 
-                <div className="space-y-5">
+                <div className="p-6 space-y-6">
+                  {/* Étape 1 : Opérateur */}
                   <div>
-                    <Label className="text-sm mb-3 block">Opérateur Mobile Money</Label>
+                    <Label className="text-sm font-semibold mb-3 block flex items-center gap-1.5">
+                      <span className="w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs flex items-center justify-center font-bold">1</span>
+                      Choisissez votre opérateur
+                    </Label>
                     <div className="grid grid-cols-2 gap-3">
                       {OPERATORS.map(op => (
                         <button
@@ -224,41 +289,93 @@ export default function SubscriptionPage() {
                           onClick={() => setSelectedOperator(op.id)}
                           data-testid={`button-operator-${op.id}`}
                           className={`p-4 rounded-xl border-2 flex items-center gap-3 transition-all text-left ${
-                            selectedOperator === op.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                            selectedOperator === op.id ? op.activeColor + " border-2" : "border-border hover:border-primary/40 bg-card"
                           }`}
                         >
-                          <span className="text-2xl">{op.emoji}</span>
-                          <span className="font-semibold text-sm">{op.name}</span>
+                          <div className={`w-10 h-10 ${op.logoColor} text-white rounded-xl flex items-center justify-center font-display font-bold text-lg flex-shrink-0`}>
+                            {op.logo}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">{op.name}</p>
+                            <p className={`text-xs font-mono font-bold ${selectedOperator === op.id ? op.textColor : "text-muted-foreground"}`}>
+                              {op.shortCode}
+                            </p>
+                          </div>
+                          {selectedOperator === op.id && (
+                            <Check className="w-4 h-4 text-primary ml-auto" />
+                          )}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Numéro Mobile Money</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+236 XX XX XX XX"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      className="h-11"
-                      data-testid="input-phone"
-                    />
+                  {/* Instructions spécifiques */}
+                  {selectedOp && (
+                    <div className={`rounded-xl border p-4 ${selectedOp.color}`}>
+                      <p className={`text-sm font-semibold mb-2 ${selectedOp.textColor}`}>
+                        📱 Instructions {selectedOp.name}
+                      </p>
+                      <ol className={`text-sm space-y-1 ${selectedOp.textColor} opacity-90`}>
+                        <li>1. Composez <strong className="font-mono">{selectedOp.shortCode}</strong> sur votre téléphone</li>
+                        <li>2. Suivez : {selectedOp.menuPath}</li>
+                        <li>3. Code marchand :
+                          <button
+                            onClick={() => handleCopy(MERCHANT_CODE)}
+                            className="ml-1 inline-flex items-center gap-1 font-mono font-bold bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded hover:bg-white/80 transition-colors"
+                          >
+                            {MERCHANT_CODE}
+                            {copied ? <CheckCheck className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        </li>
+                        <li>4. Montant : <strong>{selectedPlanObj.price.toLocaleString("fr-FR")} XAF</strong></li>
+                        <li>5. Entrez votre numéro ci-dessous et soumettez</li>
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Étape 2 : Numéro */}
+                  <div>
+                    <Label htmlFor="phone" className="text-sm font-semibold mb-3 block flex items-center gap-1.5">
+                      <span className="w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs flex items-center justify-center font-bold">2</span>
+                      Votre numéro Mobile Money
+                    </Label>
+                    <div className="flex gap-2">
+                      <div className="flex items-center px-3 bg-muted border border-border rounded-lg text-sm font-medium text-muted-foreground">
+                        +236
+                      </div>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="XX XX XX XX"
+                        value={phone}
+                        onChange={e => setPhone(formatPhone(e.target.value))}
+                        maxLength={8}
+                        className="h-11 font-mono tracking-wider flex-1"
+                        data-testid="input-phone"
+                      />
+                    </div>
+                    {phone.length > 0 && phone.length < 8 && (
+                      <p className="text-xs text-amber-600 mt-1">Numéro trop court (8 chiffres requis)</p>
+                    )}
                   </div>
 
+                  {/* Bouton */}
                   <Button
-                    className="w-full h-12 font-bold"
-                    disabled={!selectedOperator || !phone.trim() || initiatePayment.isPending}
+                    className="w-full h-12 font-bold text-base"
+                    disabled={!selectedOperator || phone.length < 8 || initiatePayment.isPending}
                     onClick={() => initiatePayment.mutate()}
                     data-testid="button-pay"
                   >
                     {initiatePayment.isPending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <><Loader2 className="w-5 h-5 animate-spin mr-2" />Enregistrement…</>
                     ) : (
-                      `Soumettre la demande — ${PLANS.find(p => p.id === selectedPlan)?.price.toLocaleString("fr-FR")} XAF/mois`
+                      <>Confirmer — {selectedPlanObj.price.toLocaleString("fr-FR")} XAF/mois</>
                     )}
                   </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    Votre plan sera activé sous 24h après vérification du paiement.
+                  </p>
                 </div>
               </div>
             )}
