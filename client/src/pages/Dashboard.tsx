@@ -8,17 +8,18 @@ import { StaffCard } from "@/components/StaffCard";
 import { PlayerDialog } from "@/components/PlayerDialog";
 import { StaffDialog } from "@/components/StaffDialog";
 import { AdminManager } from "@/components/AdminManager";
+import { NewsFeed } from "@/components/NewsFeed";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   LogOut, Plus, Users, Shield, Briefcase, Calendar,
-  Check, Pencil, Building2, Crown, Lock, Trophy
+  Check, Pencil, Building2, Crown, Lock, Trophy, Newspaper
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { Player, StaffMember } from "@shared/schema";
 
-type Tab = "joueurs" | "staff";
+type Tab = "joueurs" | "staff" | "actualites";
 
 const PLAN_BADGE: Record<string, { label: string; className: string }> = {
   gratuit: { label: "Gratuit", className: "bg-muted text-muted-foreground border-border" },
@@ -233,10 +234,10 @@ export default function Dashboard() {
 
         {/* Onglets + bouton action */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div className="flex gap-2 bg-muted/50 p-1 rounded-xl">
+          <div className="flex gap-1 bg-muted/50 p-1 rounded-xl overflow-x-auto">
             <button
               onClick={() => setActiveTab("joueurs")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
                 activeTab === "joueurs"
                   ? "bg-card shadow text-primary border border-border/50"
                   : "text-muted-foreground hover:text-foreground"
@@ -254,37 +255,52 @@ export default function Dashboard() {
             </button>
             <button
               onClick={() => setActiveTab("staff")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
                 activeTab === "staff"
                   ? "bg-card shadow text-primary border border-border/50"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Briefcase className="w-4 h-4" />
-              Staff Technique
+              Staff
               {staffMembers && (
                 <span className="ml-1 px-2 py-0.5 text-xs rounded-full bg-primary/10 text-primary font-bold">
                   {staffMembers.length}
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setActiveTab("actualites")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${
+                activeTab === "actualites"
+                  ? "bg-card shadow text-primary border border-border/50"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              data-testid="tab-actualites"
+            >
+              <Newspaper className="w-4 h-4" />
+              Actualités
+              <span className="ml-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            </button>
           </div>
 
-          <Button
-            onClick={activeTab === "joueurs" ? handleCreatePlayer : handleCreateStaff}
-            className={`shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 ${
-              activeTab === "joueurs" && atPlayerLimit
-                ? "bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed"
-                : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
-            }`}
-            data-testid={`button-add-${activeTab === "joueurs" ? "player" : "staff"}`}
-          >
-            {activeTab === "joueurs" && atPlayerLimit ? (
-              <><Lock className="w-4 h-4 mr-2" />Limite atteinte</>
-            ) : (
-              <><Plus className="w-5 h-5 mr-2" />{activeTab === "joueurs" ? "Nouveau Joueur" : "Nouveau Membre Staff"}</>
-            )}
-          </Button>
+          {activeTab !== "actualites" && (
+            <Button
+              onClick={activeTab === "joueurs" ? handleCreatePlayer : handleCreateStaff}
+              className={`shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 ${
+                activeTab === "joueurs" && atPlayerLimit
+                  ? "bg-muted text-muted-foreground hover:bg-muted cursor-not-allowed"
+                  : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+              }`}
+              data-testid={`button-add-${activeTab === "joueurs" ? "player" : "staff"}`}
+            >
+              {activeTab === "joueurs" && atPlayerLimit ? (
+                <><Lock className="w-4 h-4 mr-2" />Limite atteinte</>
+              ) : (
+                <><Plus className="w-5 h-5 mr-2" />{activeTab === "joueurs" ? "Nouveau Joueur" : "Nouveau Membre Staff"}</>
+              )}
+            </Button>
+          )}
         </div>
 
         {/* Contenu onglet Joueurs */}
@@ -341,6 +357,11 @@ export default function Dashboard() {
               </div>
             )}
           </>
+        )}
+
+        {/* Contenu onglet Actualités */}
+        {activeTab === "actualites" && (
+          <NewsFeed players={players} />
         )}
       </main>
 
