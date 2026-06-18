@@ -42,7 +42,7 @@ const OPERATORS = [
     id: "moov",
     name: "Moov Money",
     shortCode: "#150#",
-    menuPath: "1 → 1 (Payer une facture) → Saisir le code marchand",
+    menuPath: "2 (Paiements) → 1 (Payer un marchand) → Saisir le code NectSports",
     color: "border-blue-400 bg-blue-50 dark:bg-blue-950/30",
     activeColor: "border-blue-500 bg-blue-100 dark:bg-blue-900/40",
     textColor: "text-blue-700 dark:text-blue-300",
@@ -52,8 +52,8 @@ const OPERATORS = [
   {
     id: "airtel",
     name: "Airtel Money",
-    shortCode: "*500#",
-    menuPath: "4 (Paiement) → 1 (Marchand) → Saisir le code USP",
+    shortCode: "*555#",
+    menuPath: "3 (Paiements) → 1 (Marchand) → Saisir le code NectSports",
     color: "border-red-400 bg-red-50 dark:bg-red-950/30",
     activeColor: "border-red-500 bg-red-100 dark:bg-red-900/40",
     textColor: "text-red-700 dark:text-red-300",
@@ -62,7 +62,7 @@ const OPERATORS = [
   },
 ];
 
-const MERCHANT_CODE = "USP-2025";
+const MERCHANT_CODE = "NS-2025";
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
@@ -341,7 +341,7 @@ export default function SubscriptionPage() {
                     </Label>
                     <div className="flex gap-2">
                       <div className="flex items-center px-3 bg-muted border border-border rounded-lg text-sm font-medium text-muted-foreground">
-                        +236
+                        +241
                       </div>
                       <Input
                         id="phone"

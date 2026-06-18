@@ -60,7 +60,7 @@ export default function SetupPage() {
             </div>
             <div>
               <h1 className="text-xl font-display font-bold">Configuration initiale</h1>
-              <p className="text-xs text-muted-foreground">UlcySportPro (USP)</p>
+              <p className="text-xs text-muted-foreground">NectSports</p>
             </div>
           </div>
 

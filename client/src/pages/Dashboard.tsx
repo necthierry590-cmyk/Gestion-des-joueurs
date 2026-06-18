@@ -115,7 +115,7 @@ export default function Dashboard() {
             </div>
             <div>
               <h1 className="text-base font-display font-bold leading-tight">
-                {club?.name || "UlcySportPro"}
+                {club?.name || "NectSports"}
               </h1>
               <div className="flex items-center gap-1.5">
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium capitalize ${planBadge.className}`}>

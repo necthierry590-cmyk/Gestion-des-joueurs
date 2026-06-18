@@ -191,7 +191,7 @@ export default function SuperAdminPage() {
               <Trophy className="w-5 h-5" />
             </div>
             <h1 className="font-display font-bold text-xl">
-              USP <span className="text-primary/40 font-normal text-sm">/ Super Admin</span>
+              NectSports <span className="text-primary/40 font-normal text-sm">/ Super Admin</span>
             </h1>
           </div>
           <div className="flex items-center gap-3">

@@ -64,7 +64,7 @@ export default function LandingPage() {
             <div className="bg-primary text-primary-foreground p-2 rounded-lg">
               <Trophy className="w-5 h-5" />
             </div>
-            <span className="font-display font-bold text-xl">UlcySportPro</span>
+            <span className="font-display font-bold text-xl">NectSports</span>
             <span className="text-xs font-medium bg-accent/10 text-accent px-2 py-0.5 rounded-full">SaaS</span>
           </div>
           <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function LandingPage() {
       <section className="py-20 bg-primary text-primary-foreground">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl sm:text-4xl font-display font-bold mb-4">Prêt à gérer votre club comme un pro ?</h2>
-          <p className="text-primary-foreground/70 text-lg mb-8">Rejoignez des clubs qui font confiance à UlcySportPro.</p>
+          <p className="text-primary-foreground/70 text-lg mb-8">Rejoignez des clubs qui font confiance à NectSports.</p>
           <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-bold px-10" onClick={() => setLocation("/register")}>
             Créer mon club maintenant
             <ArrowRight className="w-5 h-5 ml-2" />
@@ -218,7 +218,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-primary" />
-            <span className="font-display font-bold text-foreground">UlcySportPro</span>
+            <span className="font-display font-bold text-foreground">NectSports</span>
             <span>© 2026</span>
           </div>
           <div className="flex gap-6">

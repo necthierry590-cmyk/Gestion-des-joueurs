@@ -47,7 +47,7 @@ export default function VisitorsPage() {
             <Eye className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-display font-bold tracking-tight leading-tight">UlcySportPro <span className="text-primary/60 font-normal text-base">(USP)</span></h1>
+            <h1 className="text-xl font-display font-bold tracking-tight leading-tight">NectSports</h1>
             <p className="text-xs text-muted-foreground leading-none">Espace Visiteurs</p>
           </div>
         </div>
